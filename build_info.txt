@@ -1,0 +1,5 @@
+Build type: generic
+Debug mode: disabled
+Build timestamp: Tue May 27 00:48:19 EDT 2025
+Architecture: x86_64
+Compiler: 
