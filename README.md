@@ -77,8 +77,7 @@ Detailed documentation is available in the `docs` directory:
 
 ## License
 
-Copyright © 2025 CHARM Cryptography Team
-All rights reserved.
+This project is licensed under the [MIT License](LICENSE).
 
 ## Contact
 
