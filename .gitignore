@@ -51,3 +51,8 @@ perf.data*
 *.gcda
 *.gcno
 *.gcov
+
+# Dependencies and external libraries
+blake3/
+lib/
+external/

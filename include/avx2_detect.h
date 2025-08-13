@@ -79,6 +79,13 @@ typedef struct {
 bool avx2_is_supported(void);
 
 /**
+ * @brief Check if AVX512F is supported
+ * 
+ * @return bool True if AVX512F is supported
+ */
+bool avx512_is_supported(void);
+
+/**
  * @brief Check if NEON is supported
  * 
  * @return bool True if NEON is supported  
@@ -107,6 +114,18 @@ bool simd_is_feature_supported(simd_feature_t feature);
  * @return const char* Implementation name (e.g., "avx2", "neon", "fallback")
  */
 const char* simd_get_optimal_implementation(void);
+
+/**
+ * @brief Get the best available SIMD feature (legacy)
+ * 
+ * @return const char* Name of the best available SIMD feature
+ */
+const char* get_best_simd_feature(void);
+
+/**
+ * @brief Print CPU feature information
+ */
+void print_cpu_features(void);
 
 /**
  * @brief Get string representation of SIMD architecture

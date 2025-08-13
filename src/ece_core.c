@@ -20,12 +20,18 @@
 #include <unistd.h> // For getpid()
 #include <stdint.h> // For uintptr_t
 
-// AVX2 SIMD acceleration
-#if defined(__AVX2__)
+// AVX2/AVX512 SIMD acceleration
+#if defined(__AVX512F__)
 #include <immintrin.h>
 #define SIMD_AVAILABLE 1
+#define SIMD_AVX512 1
+#elif defined(__AVX2__)
+#include <immintrin.h>
+#define SIMD_AVAILABLE 1
+#define SIMD_AVX512 0
 #else
 #define SIMD_AVAILABLE 0
+#define SIMD_AVX512 0
 #endif
 
 // Fast timestamp counter
@@ -37,6 +43,55 @@ static inline uint64_t rdtsc(void) {
 
 // Forward declarations for ultra-optimized functions
 static inline void ece_hyper_process_blocks(ece_handle_t handle, const uint8_t* data, size_t num_blocks);
+
+#if defined(__AVX512F__) && defined(__AVX512DQ__)
+// AVX512 optimized processing function
+static inline void ece_avx512_process_blocks(ece_handle_t handle, const uint8_t* data, size_t num_blocks) {
+    if (!handle || !data || num_blocks == 0) return;
+    
+    // Ultra-fast AVX512 processing path
+    static uint64_t entropy_seed = 0;
+    static uint32_t entropy_counter = 0;
+    
+    if (++entropy_counter > 100000) {
+        entropy_seed = rdtsc();
+        entropy_counter = 0;
+    }
+    
+    const uint8_t* block_ptr = data;
+    
+    if (ECE_STATE_SIZE == 32) {
+        // Ultra-fast AVX512 processing path - 64-byte vectors
+        __m512i state_vec = _mm512_broadcast_i64x4(_mm256_loadu_si256((__m256i*)handle->state));
+        __m512i entropy_vec = _mm512_set1_epi64(entropy_seed);
+        
+        for (size_t block = 0; block < num_blocks; block++) {
+            // Load block data
+            __m512i block_vec;
+            if (ECE_BLOCK_SIZE >= 64) {
+                block_vec = _mm512_loadu_si512((__m512i*)block_ptr);
+            } else {
+                __m256i block_256 = _mm256_loadu_si256((__m256i*)block_ptr);
+                block_vec = _mm512_broadcast_i64x4(block_256);
+            }
+            
+            // High performance mixing optimized for AVX512
+            state_vec = _mm512_xor_si512(state_vec, block_vec);
+            state_vec = _mm512_xor_si512(state_vec, entropy_vec);
+            state_vec = _mm512_xor_si512(state_vec, _mm512_srli_epi32(state_vec, 13));
+            state_vec = _mm512_xor_si512(state_vec, _mm512_slli_epi32(state_vec, 19));
+            
+            // Advanced entropy evolution
+            entropy_vec = _mm512_add_epi64(entropy_vec, _mm512_set1_epi64(block * 0x9E3779B9));
+            
+            block_ptr += ECE_BLOCK_SIZE;
+        }
+        
+        // Store back the lower 256 bits
+        _mm256_storeu_si256((__m256i*)handle->state, _mm512_extracti64x4_epi64(state_vec, 0));
+    }
+}
+#endif
 
 // Constants for the Entropic Collapse Function - Optimized for performance
 #define ECE_BLOCK_SIZE 64
@@ -530,6 +585,15 @@ static inline void ece_hyper_process_blocks(ece_handle_t handle, const uint8_t* 
     // Process all blocks in one hot loop with minimal operations
     const uint8_t* block_ptr = data;
     
+#if defined(__AVX512F__) && defined(__AVX512DQ__)
+    // Use AVX512 if supported at runtime
+    if (avx512_is_supported() && ECE_STATE_SIZE == 32) {
+        ece_avx512_process_blocks(handle, data, num_blocks);
+        return;
+    }
+#endif
+    
+    // Use compile-time and runtime detection for optimal SIMD path
 #if defined(__AVX2__)
     if (avx2_is_supported() && ECE_STATE_SIZE == 32) {
         // Ultra-fast AVX2 processing path
@@ -697,6 +761,7 @@ static void ece_apply_avalanche(uint8_t* data, size_t size) {
 static void ece_simd_chaos_injection(uint8_t* data, size_t size) {
     if (!data || size == 0) return;
     
+    // Use runtime detection to choose optimal SIMD path
 #if SIMD_AVAILABLE && defined(__AVX2__)
     if (avx2_is_supported() && size >= 32) {
         // Process 32-byte chunks with AVX2
