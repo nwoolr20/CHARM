@@ -20,6 +20,9 @@
 #include "charm.h"
 #include "ece_core.h"
 
+// BLAKE3
+#include "blake3.h"
+
 // Test parameters
 #define MIN_SIZE 64
 #define MAX_SIZE (1024 * 1024)  // 1 MB
@@ -95,15 +98,36 @@ static int benchmark_sha256(const uint8_t* data, size_t size, benchmark_result_t
     return 0;
 }
 
-// BLAKE3 benchmark function (placeholder - would need BLAKE3 library)
+// BLAKE3 benchmark function
 static int benchmark_blake3(const uint8_t* data, size_t size, benchmark_result_t* result) {
-    // Placeholder implementation - would use BLAKE3 library if available
-    result->time_ms = result->throughput_mbps = 0.0;
-    result->name = "BLAKE3";
-    memset(result->digest, 0, 32);
+    if (!data || size == 0 || !result) {
+        return -1;
+    }
     
-    printf("Note: BLAKE3 benchmark not available (library not installed)\n");
-    return -1;
+    // Warmup iterations
+    for (int i = 0; i < WARMUP_ITERATIONS; i++) {
+        blake3_hasher hasher;
+        blake3_hasher_init(&hasher);
+        blake3_hasher_update(&hasher, data, size);
+        blake3_hasher_finalize(&hasher, result->digest, 32);
+    }
+    
+    // Timed iterations
+    double start_time = get_time_ms();
+    
+    for (int i = 0; i < NUM_ITERATIONS; i++) {
+        blake3_hasher hasher;
+        blake3_hasher_init(&hasher);
+        blake3_hasher_update(&hasher, data, size);
+        blake3_hasher_finalize(&hasher, result->digest, 32);
+    }
+    
+    double end_time = get_time_ms();
+    result->time_ms = (end_time - start_time) / NUM_ITERATIONS;
+    result->throughput_mbps = (size / (1024.0 * 1024.0)) / (result->time_ms / 1000.0);
+    result->name = "BLAKE3";
+    
+    return 0;
 }
 
 static void print_header(void) {

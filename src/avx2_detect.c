@@ -42,6 +42,30 @@ bool avx2_is_supported(void) {
 }
 
 /**
+ * @brief Check if AVX512F is supported
+ * 
+ * @return bool true if AVX512F is supported, false otherwise
+ */
+bool avx512_is_supported(void) {
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
+    unsigned int eax, ebx, ecx, edx;
+    
+    // Check if CPUID supports extended features (leaf 7)
+    if (__get_cpuid(0, &eax, &ebx, &ecx, &edx)) {
+        if (eax >= 7) {
+            // Get extended features
+            __cpuid_count(7, 0, eax, ebx, ecx, edx);
+            
+            // Check AVX512F bit (bit 16 of EBX)
+            return (ebx & (1 << 16)) != 0;
+        }
+    }
+#endif
+    
+    return false;
+}
+
+/**
  * @brief Check if NEON is supported
  * 
  * @return bool true if NEON is supported, false otherwise
@@ -65,7 +89,9 @@ bool neon_is_supported(void) {
  * @return const char* Name of the best available SIMD feature
  */
 const char* get_best_simd_feature(void) {
-    if (avx2_is_supported()) {
+    if (avx512_is_supported()) {
+        return "AVX512";
+    } else if (avx2_is_supported()) {
         return "AVX2";
     } else if (neon_is_supported()) {
         return "NEON";
@@ -79,6 +105,7 @@ const char* get_best_simd_feature(void) {
  */
 void print_cpu_features(void) {
     printf("CPU Features:\n");
+    printf("  AVX512: %s\n", avx512_is_supported() ? "Supported" : "Not supported");
     printf("  AVX2: %s\n", avx2_is_supported() ? "Supported" : "Not supported");
     printf("  NEON: %s\n", neon_is_supported() ? "Supported" : "Not supported");
     printf("  Best SIMD: %s\n", get_best_simd_feature());
