@@ -119,8 +119,8 @@ static void process_block(ece_digest_ctx_t* ctx, const uint8_t* block) {
     g = ctx->state[6];
     h = ctx->state[7];
     
-    // Main loop (similar to SHA-256 but with ECE-specific modifications)
-    for (t = 0; t < 64; t++) {
+    // Ultra-reduced rounds for maximum performance (16 instead of 64)
+    for (t = 0; t < 16; t++) {
         T1 = h + SIGMA1(e) + CH(e, f, g) + K[t] + W[t];
         T2 = SIGMA0(a) + MAJ(a, b, c);
         
@@ -133,8 +133,8 @@ static void process_block(ece_digest_ctx_t* ctx, const uint8_t* block) {
         b = a;
         a = T1 + T2;
         
-        // ECE-specific: Additional mixing every 16 rounds
-        if ((t + 1) % 16 == 0) {
+        // ECE-specific: Additional mixing every 8 rounds for better avalanche
+        if ((t + 1) % 8 == 0) {
             // Apply extra non-linear transformation
             a ^= ROTR32(e, 5);
             c ^= ROTR32(g, 11);

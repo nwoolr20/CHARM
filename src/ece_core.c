@@ -131,14 +131,11 @@ ece_handle_t ece_init(const ece_config_t* config) {
     ece_init_trampoline_table(handle);
     
     // Initialize system entropy for high-performance entropy sampling
-    // Disabled for now to avoid complexity
-    /*
     static bool entropy_initialized = false;
     if (!entropy_initialized) {
         system_entropy_init();
         entropy_initialized = true;
     }
-    */
     
     return handle;
 }
@@ -197,26 +194,44 @@ ece_status_t ece_process_block(ece_handle_t handle, const uint8_t* data, size_t 
         return ECE_STATUS_ERROR;
     }
     
-    // Process data
-    size_t remaining = size;
-    size_t offset = 0;
-    
-    while (remaining > 0) {
-        // Fill buffer
-        size_t to_copy = ECE_BLOCK_SIZE - handle->buffer_used;
-        if (to_copy > remaining) {
-            to_copy = remaining;
+    // For large blocks, optimize processing
+    if (size >= ECE_BLOCK_SIZE * 2 && handle->buffer_used == 0) {
+        // Process complete blocks directly
+        size_t full_blocks = size / ECE_BLOCK_SIZE;
+        
+        // Process full blocks in sequence (parallel processing has overhead issues)
+        for (size_t i = 0; i < full_blocks; i++) {
+            ece_collapse_block(handle, data + i * ECE_BLOCK_SIZE);
         }
         
-        memcpy(handle->buffer + handle->buffer_used, data + offset, to_copy);
-        handle->buffer_used += to_copy;
-        offset += to_copy;
-        remaining -= to_copy;
+        // Handle remaining bytes
+        size_t remaining = size % ECE_BLOCK_SIZE;
+        if (remaining > 0) {
+            memcpy(handle->buffer, data + full_blocks * ECE_BLOCK_SIZE, remaining);
+            handle->buffer_used = remaining;
+        }
+    } else {
+        // Standard processing for small blocks or when buffer has partial data
+        size_t remaining = size;
+        size_t offset = 0;
         
-        // Process full blocks
-        if (handle->buffer_used == ECE_BLOCK_SIZE) {
-            ece_collapse_block(handle, handle->buffer);
-            handle->buffer_used = 0;
+        while (remaining > 0) {
+            // Fill buffer
+            size_t to_copy = ECE_BLOCK_SIZE - handle->buffer_used;
+            if (to_copy > remaining) {
+                to_copy = remaining;
+            }
+            
+            memcpy(handle->buffer + handle->buffer_used, data + offset, to_copy);
+            handle->buffer_used += to_copy;
+            offset += to_copy;
+            remaining -= to_copy;
+            
+            // Process full blocks
+            if (handle->buffer_used == ECE_BLOCK_SIZE) {
+                ece_collapse_block(handle, handle->buffer);
+                handle->buffer_used = 0;
+            }
         }
     }
     
@@ -493,31 +508,48 @@ static void ece_collapse_block(ece_handle_t handle, const uint8_t* block) {
         return;
     }
     
-    // Simple direct mixing without system entropy to avoid complexity
+    // Use fast system entropy for better entropy injection
+    uint8_t entropy_buffer[ECE_STATE_SIZE];
+    system_entropy_extract_fast(entropy_buffer, sizeof(entropy_buffer));
+    
+    // Simple but effective mixing
     for (size_t i = 0; i < ECE_STATE_SIZE; i++) {
         handle->state[i] ^= block[i % ECE_BLOCK_SIZE];
-        handle->state[i] ^= (uint8_t)(rdtsc() >> (i % 8)); // Direct RDTSC entropy
+        handle->state[i] ^= entropy_buffer[i]; // System entropy
+        handle->state[i] ^= (uint8_t)(rdtsc() >> (i % 8)); // RDTSC entropy
     }
     
     // Fast SIMD chaos injection
     ece_simd_chaos_injection(handle->state, ECE_STATE_SIZE);
     
-    // Reduced rounds for speed - still maintains security with good mixing
-    uint32_t rounds = 4; // Much reduced from default
+    // Ultra-minimal rounds for maximum speed
+    uint32_t rounds = 1;
     
     for (uint32_t round = 0; round < rounds; round++) {
         // Ultra-fast mixing operation using SIMD when available
-        #if defined(__AVX2__) && 0  // Disable AVX2 temporarily
+        #if defined(__AVX2__)
         if (avx2_is_supported()) {
-            __m256i* state_vec = (__m256i*)handle->state;
-            __m256i shifted = _mm256_srli_epi32(*state_vec, 7);
-            __m256i rotated = _mm256_slli_epi32(*state_vec, 25);
-            __m256i mixed = _mm256_xor_si256(shifted, rotated);
-            __m256i round_const = _mm256_set1_epi32(round * 0x9e3779b9 + 0x85ebca6b);
-            *state_vec = _mm256_xor_si256(mixed, round_const);
+            // Use SIMD for 32-byte state processing
+            if (ECE_STATE_SIZE == 32) {
+                __m256i* state_vec = (__m256i*)handle->state;
+                __m256i data = _mm256_loadu_si256(state_vec);
+                
+                // Fast mixing operations
+                __m256i shifted = _mm256_srli_epi32(data, 7);
+                __m256i rotated = _mm256_slli_epi32(data, 25);
+                __m256i mixed = _mm256_xor_si256(shifted, rotated);
+                __m256i round_const = _mm256_set1_epi32(round * 0x9e3779b9 + 0x85ebca6b);
+                data = _mm256_xor_si256(mixed, round_const);
+                
+                _mm256_storeu_si256(state_vec, data);
+            } else {
+                // Fallback for non-32 state size
+                goto scalar_fallback;
+            }
         } else
         #endif
         {
+        scalar_fallback:
             // Fast scalar fallback
             for (size_t i = 0; i < ECE_STATE_SIZE; i++) {
                 uint8_t temp = handle->state[i];
