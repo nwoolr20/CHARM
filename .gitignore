@@ -1,0 +1,53 @@
+# Build artifacts
+build/
+*.o
+*.a
+*.so
+*.dylib
+
+# Executables
+charm
+benchmark_comprehensive
+bench_digest
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# Log files
+*.log
+
+# Core dumps
+core
+core.*
+
+# Test outputs
+test_output/
+test_results/results_*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+Makefile.old
+
+# Profiling files
+gmon.out
+callgrind.out.*
+perf.data*
+
+# Coverage files
+*.gcda
+*.gcno
+*.gcov
