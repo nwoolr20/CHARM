@@ -25,6 +25,7 @@ ALL_LIB_OBJECTS = $(ALL_LIB_SOURCES:.c=.o)
 LIB_STATIC = libcharm.a
 CHARM_BIN = charm
 BENCH_BIN = bench_digest
+COMPREHENSIVE_BENCH = benchmark_comprehensive
 
 # Default target - build core functionality
 all: core
@@ -33,6 +34,11 @@ all: core
 core: $(CORE_OBJECTS) main_simple.o
 	@echo "Building CHARM core binary..."
 	$(CC) $(CFLAGS) -o $(CHARM_BIN) main_simple.o $(CORE_OBJECTS) $(LDFLAGS)
+
+# Build comprehensive benchmark
+bench: $(CORE_OBJECTS) benchmark_comprehensive.o
+	@echo "Building comprehensive benchmark..."
+	$(CC) $(CFLAGS) -o $(COMPREHENSIVE_BENCH) benchmark_comprehensive.o $(CORE_OBJECTS) $(LDFLAGS)
 
 # Build full system
 full: $(LIB_STATIC) $(CHARM_BIN) $(BENCH_BIN)
@@ -71,7 +77,7 @@ benchmark: $(BENCH_BIN)
 # Clean build files
 clean:
 	@echo "Cleaning build files..."
-	@rm -f *.o $(LIB_STATIC) $(CHARM_BIN) $(BENCH_BIN)
+	@rm -f *.o $(LIB_STATIC) $(CHARM_BIN) $(BENCH_BIN) $(COMPREHENSIVE_BENCH)
 	@rm -rf test_output/
 	@echo "Clean complete."
 
@@ -84,6 +90,7 @@ help:
 	@echo "  core      - Build core ECE functionality (default)"
 	@echo "  full      - Build complete system with all components"
 	@echo "  clean     - Remove build files"
+	@echo "  bench     - Build comprehensive benchmark tool"
 	@echo "  test      - Run test suite"
 	@echo "  benchmark - Run performance benchmarks"
 	@echo "  help      - Show this help message"
