@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 
-#include "../include/charm.h"
+#include "charm.h"
 
 #define SNAPSHOT_BUFFER_SIZE 128
 #define SNAPSHOT_LOG_PATH "./logs/entropy_snapshots.log"

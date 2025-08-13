@@ -3,8 +3,9 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "../include/charm.h"
-#include "../include/caeds/caeds_anomaly.h"
+#include <math.h>
+#include "charm.h"
+#include "caeds_anomaly.h"
 
 /**
  * caeds_anomaly.c - CHARM Anomaly Detection Module
