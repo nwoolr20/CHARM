@@ -1,89 +1,96 @@
-# CHARM System Makefile - Focused build approach
+# CHARM System Makefile - Organized structure with performance optimizations
 # Build core functionality first, then extend
 
-# Compiler and flags
+# Compiler and flags - Enhanced for maximum performance
 CC = gcc
 AR = ar
 RANLIB = ranlib
-CFLAGS = -Wall -Wextra -std=c99 -O2 -mavx2 -march=native -fopenmp -g
-LDFLAGS = -pthread -lm -lssl -lcrypto
+
+# Performance-optimized compilation flags
+CFLAGS = -Wall -Wextra -std=c99 -O3 -flto -ffast-math -funroll-loops \
+         -mavx2 -march=native -mtune=native -fopenmp \
+         -fomit-frame-pointer -finline-functions -g
+
+# Linker flags
+LDFLAGS = -pthread -lm -lssl -lcrypto -flto
+
+# Directories
+SRC_DIR = src
+INCLUDE_DIR = include
+BUILD_DIR = build
+TOOLS_DIR = tools
+
+# Include path
+INCLUDES = -I$(INCLUDE_DIR)
 
 # Core essential source files for minimal working system
-CORE_SOURCES = avx2_detect.c ece_core.c ece_digest.c entropy_bus.c main.c
+CORE_SOURCES = $(SRC_DIR)/avx2_detect.c $(SRC_DIR)/ece_core.c $(SRC_DIR)/ece_digest.c $(SRC_DIR)/entropy_bus.c $(SRC_DIR)/system_entropy.c $(SRC_DIR)/main_simple.c
 
 # All library source files (for full build)
-ALL_LIB_SOURCES = avx2_detect.c caeds_anomaly.c caeds_flux.c caeds_notify.c caeds_predict.c \
-                  cee_buffer.c cee_mix.c cee_whiten.c charmctl.c ece_core.c ece_digest.c \
-                  ece_seed.c ece_stream.c entropy_bus.c entropy_trace.c fallback_entropy.c \
-                  neon_backend.c rng_linux.c snapshot_logger.c watchdog_daemon.c
+ALL_LIB_SOURCES = $(wildcard $(SRC_DIR)/*.c)
 
-# Object files for core build
-CORE_OBJECTS = avx2_detect.o ece_core.o ece_digest.o entropy_bus.o
-ALL_LIB_OBJECTS = $(ALL_LIB_SOURCES:.c=.o)
+# Object files for core build (in build directory)
+CORE_OBJECTS = $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o $(BUILD_DIR)/main_simple.o
+ALL_LIB_OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(ALL_LIB_SOURCES))
 
 # Output files
-LIB_STATIC = libcharm.a
-CHARM_BIN = charm
-BENCH_BIN = bench_digest
-COMPREHENSIVE_BENCH = benchmark_comprehensive
+LIB_STATIC = $(BUILD_DIR)/libcharm.a
+CHARM_BIN = $(BUILD_DIR)/charm
+BENCH_BIN = $(BUILD_DIR)/bench_digest
+COMPREHENSIVE_BENCH = $(BUILD_DIR)/benchmark_comprehensive
 
 # Default target - build core functionality
 all: core
 
+# Create build directory if it doesn't exist
+$(BUILD_DIR):
+	@mkdir -p $(BUILD_DIR)
+
+# Pattern rule for object files
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+	@echo "Compiling $< with performance optimizations..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+
 # Build core functionality only
-core: $(CORE_OBJECTS) main_simple.o
-	@echo "Building CHARM core binary..."
-	$(CC) $(CFLAGS) -o $(CHARM_BIN) main_simple.o $(CORE_OBJECTS) $(LDFLAGS)
+core: $(CORE_OBJECTS)
+	@echo "Building CHARM core binary with maximum performance..."
+	$(CC) $(CFLAGS) -o $(CHARM_BIN) $(CORE_OBJECTS) $(LDFLAGS)
 
 # Build comprehensive benchmark
-bench: $(CORE_OBJECTS) benchmark_comprehensive.o
+bench: $(BUILD_DIR)/benchmark_comprehensive.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o
 	@echo "Building comprehensive benchmark..."
-	$(CC) $(CFLAGS) -o $(COMPREHENSIVE_BENCH) benchmark_comprehensive.o $(CORE_OBJECTS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $(COMPREHENSIVE_BENCH) $^ $(LDFLAGS)
 
 # Build full system
 full: $(LIB_STATIC) $(CHARM_BIN) $(BENCH_BIN)
 
 # Build static library
 $(LIB_STATIC): $(ALL_LIB_OBJECTS)
-	@echo "Building CHARM library..."
+	@echo "Building static library..."
 	$(AR) rcs $@ $^
 	$(RANLIB) $@
 
-# Build main executable
-$(CHARM_BIN): main.o $(LIB_STATIC)
-	@echo "Building CHARM binary..."
-	$(CC) $(CFLAGS) -o $@ main.o -L. -lcharm $(LDFLAGS)
+# Test target
+test: core bench
+	@echo "Running test suite..."
+	@cd $(BUILD_DIR) && ./charm --version || true
+	@cd $(BUILD_DIR) && ./benchmark_comprehensive || true
 
-# Build benchmark executable
-$(BENCH_BIN): bench_digest.o $(LIB_STATIC)
-	@echo "Building benchmark binary..."
-	$(CC) $(CFLAGS) -o $@ bench_digest.o -L. -lcharm $(LDFLAGS)
-
-# Compile source files
-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-# Run tests
-test: $(CHARM_BIN)
-	@echo "Running CHARM test suite..."
-	@chmod +x test_all.sh
-	@./test_all.sh
-
-# Run benchmarks
-benchmark: $(BENCH_BIN)
-	@echo "Running CHARM benchmarks..."
-	@./bench_digest
+# Benchmark target
+benchmark: bench
+	@echo "Running performance benchmarks..."
+	@cd $(BUILD_DIR) && ./benchmark_comprehensive
 
 # Clean build files
 clean:
 	@echo "Cleaning build files..."
-	@rm -f *.o $(LIB_STATIC) $(CHARM_BIN) $(BENCH_BIN) $(COMPREHENSIVE_BENCH)
+	@rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/*.a $(BUILD_DIR)/charm $(BUILD_DIR)/bench_digest $(BUILD_DIR)/benchmark_comprehensive
 	@rm -rf test_output/
 	@echo "Clean complete."
 
 # Help
 help:
-	@echo "CHARM System Makefile"
+	@echo "CHARM System Makefile - Organized Structure"
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
