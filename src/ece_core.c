@@ -508,15 +508,22 @@ static void ece_collapse_block(ece_handle_t handle, const uint8_t* block) {
         return;
     }
     
-    // Use fast system entropy for better entropy injection
-    uint8_t entropy_buffer[ECE_STATE_SIZE];
-    system_entropy_extract_fast(entropy_buffer, sizeof(entropy_buffer));
+    // Ultra-fast entropy injection - avoid system entropy extraction in hot path
+    static uint64_t entropy_cache = 0;
+    static int cache_counter = 0;
     
-    // Simple but effective mixing
+    // Only refresh entropy cache occasionally to avoid overhead
+    if ((cache_counter++ % 256) == 0) {
+        uint8_t entropy_buffer[8];
+        system_entropy_extract_fast(entropy_buffer, sizeof(entropy_buffer));
+        entropy_cache = *((uint64_t*)entropy_buffer);
+    }
+    
+    // Ultra-fast mixing using cached entropy + RDTSC
+    uint64_t fast_entropy = rdtsc() ^ entropy_cache;
     for (size_t i = 0; i < ECE_STATE_SIZE; i++) {
         handle->state[i] ^= block[i % ECE_BLOCK_SIZE];
-        handle->state[i] ^= entropy_buffer[i]; // System entropy
-        handle->state[i] ^= (uint8_t)(rdtsc() >> (i % 8)); // RDTSC entropy
+        handle->state[i] ^= (uint8_t)(fast_entropy >> ((i % 8) * 8));
     }
     
     // Fast SIMD chaos injection
@@ -559,8 +566,8 @@ static void ece_collapse_block(ece_handle_t handle, const uint8_t* block) {
             }
         }
         
-        // Additional SIMD chaos injection every other round
-        if (round % 2 == 1) {
+        // Additional SIMD chaos injection only occasionally
+        if (round % 4 == 3) {
             ece_simd_chaos_injection(handle->state, ECE_STATE_SIZE);
         }
     }
@@ -692,17 +699,11 @@ static void ece_simd_chaos_injection(uint8_t* data, size_t size) {
         for (size_t i = 0; i < simd_size; i += 32) {
             __m256i data_vec = _mm256_loadu_si256((const __m256i*)(data + i));
             
-            // Lightning-like entropy detonation using deterministic position-dependent chaos
-            __m256i pos_chaos = _mm256_set1_epi64x((long long)(i * 0x9E3779B97F4A7C15ULL));
-            
-            // Quantum field collapse simulation - multi-stage chaos injection
+            // Simplified high-speed chaos injection
             data_vec = _mm256_xor_si256(data_vec, chaos_seed1);
-            data_vec = _mm256_add_epi64(data_vec, pos_chaos);
             data_vec = _mm256_xor_si256(data_vec, _mm256_slli_epi64(data_vec, 13));
             data_vec = _mm256_xor_si256(data_vec, chaos_seed2);
             data_vec = _mm256_xor_si256(data_vec, _mm256_srli_epi64(data_vec, 17));
-            data_vec = _mm256_add_epi64(data_vec, _mm256_set1_epi64x(0x85EBCA6B));
-            data_vec = _mm256_xor_si256(data_vec, _mm256_slli_epi64(data_vec, 5));
             
             _mm256_storeu_si256((__m256i*)(data + i), data_vec);
         }
@@ -714,10 +715,9 @@ static void ece_simd_chaos_injection(uint8_t* data, size_t size) {
     } else
 #endif
     {
-        // Fallback scalar implementation
+        // Fast scalar fallback
         for (size_t i = 0; i < size; i++) {
-            data[i] ^= (uint8_t)(i * 0x9E + 0x37 + (i >> 3));
-            data[i] = (data[i] << (i % 8)) | (data[i] >> (8 - (i % 8)));
+            data[i] ^= (uint8_t)(i * 0x9E + 0x37);
         }
     }
 }
