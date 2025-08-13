@@ -1,5 +1,5 @@
-# CHARM System Makefile
-# Updated for the actual file structure
+# CHARM System Makefile - Focused build approach
+# Build core functionality first, then extend
 
 # Compiler and flags
 CC = gcc
@@ -8,25 +8,37 @@ RANLIB = ranlib
 CFLAGS = -Wall -Wextra -std=c99 -O2 -mavx2 -march=native -fopenmp -g
 LDFLAGS = -pthread -lm -lssl -lcrypto
 
-# Core library source files (excluding main.c and bench_digest.c)
-LIB_SOURCES = avx2_detect.c caeds_anomaly.c caeds_flux.c caeds_notify.c caeds_predict.c \
-              cee_buffer.c cee_mix.c cee_whiten.c charmctl.c ece_core.c ece_digest.c \
-              ece_seed.c ece_stream.c entropy_bus.c entropy_trace.c fallback_entropy.c \
-              neon_backend.c rng_linux.c snapshot_logger.c watchdog_daemon.c
+# Core essential source files for minimal working system
+CORE_SOURCES = avx2_detect.c ece_core.c ece_digest.c entropy_bus.c main.c
 
-# Object files for library
-LIB_OBJECTS = $(LIB_SOURCES:.c=.o)
+# All library source files (for full build)
+ALL_LIB_SOURCES = avx2_detect.c caeds_anomaly.c caeds_flux.c caeds_notify.c caeds_predict.c \
+                  cee_buffer.c cee_mix.c cee_whiten.c charmctl.c ece_core.c ece_digest.c \
+                  ece_seed.c ece_stream.c entropy_bus.c entropy_trace.c fallback_entropy.c \
+                  neon_backend.c rng_linux.c snapshot_logger.c watchdog_daemon.c
+
+# Object files for core build
+CORE_OBJECTS = avx2_detect.o ece_core.o ece_digest.o entropy_bus.o
+ALL_LIB_OBJECTS = $(ALL_LIB_SOURCES:.c=.o)
 
 # Output files
 LIB_STATIC = libcharm.a
 CHARM_BIN = charm
 BENCH_BIN = bench_digest
 
-# Default target
-all: $(LIB_STATIC) $(CHARM_BIN) $(BENCH_BIN)
+# Default target - build core functionality
+all: core
+
+# Build core functionality only
+core: $(CORE_OBJECTS) main_simple.o
+	@echo "Building CHARM core binary..."
+	$(CC) $(CFLAGS) -o $(CHARM_BIN) main_simple.o $(CORE_OBJECTS) $(LDFLAGS)
+
+# Build full system
+full: $(LIB_STATIC) $(CHARM_BIN) $(BENCH_BIN)
 
 # Build static library
-$(LIB_STATIC): $(LIB_OBJECTS)
+$(LIB_STATIC): $(ALL_LIB_OBJECTS)
 	@echo "Building CHARM library..."
 	$(AR) rcs $@ $^
 	$(RANLIB) $@
@@ -69,10 +81,11 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
-	@echo "  all       - Build library and executables (default)"
+	@echo "  core      - Build core ECE functionality (default)"
+	@echo "  full      - Build complete system with all components"
 	@echo "  clean     - Remove build files"
 	@echo "  test      - Run test suite"
 	@echo "  benchmark - Run performance benchmarks"
 	@echo "  help      - Show this help message"
 
-.PHONY: all clean test benchmark help
+.PHONY: all core full clean test benchmark help

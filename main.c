@@ -529,5 +529,19 @@ int main(int argc, char* argv[]) {
             break;
             
         case MODE_DEBUG:
-            result = run_debug_mode(
-(Content truncated due to size limit. Use line ranges to read in chunks)
+            result = run_debug_mode();
+            break;
+            
+        case MODE_HELP:
+            show_help();
+            break;
+            
+        default:
+            fprintf(stderr, "Error: Invalid operation mode\n");
+            show_help();
+            result = 1;
+            break;
+    }
+    
+    return result;
+}

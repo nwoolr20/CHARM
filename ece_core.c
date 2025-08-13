@@ -540,6 +540,77 @@ static uint8_t ece_ternary_operation(uint8_t a, uint8_t b, uint8_t c) {
         trits_b[i] %= 3;
         trits_c[i] %= 3;
         
-        // Ternary majority function
-        if ((trits_a[i] == trits_b[i])
-(Content truncated due to size limit. Use line ranges to read in chunks)
+        // Ternary majority function with chaos injection
+        if ((trits_a[i] == trits_b[i]) || (trits_a[i] == trits_c[i])) {
+            result_trits[i] = trits_a[i];
+        } else if (trits_b[i] == trits_c[i]) {
+            result_trits[i] = trits_b[i];
+        } else {
+            // Chaos injection for maximum entropy
+            result_trits[i] = (trits_a[i] + trits_b[i] + trits_c[i]) % 3;
+        }
+    }
+    
+    // Convert back to byte representation
+    uint8_t result = 0;
+    for (int i = 0; i < 3; i++) {
+        result |= (result_trits[i] & 0x3) << (i * 2);
+    }
+    
+    return result;
+}
+
+/**
+ * @brief Apply trampoline mapping for non-linear transformations
+ * 
+ * @param handle ECE context handle
+ * @param data Data to transform
+ * @param size Size of data
+ */
+static void ece_apply_trampoline(ece_handle_t handle, uint8_t* data, size_t size) {
+    if (!handle || !data || size == 0) return;
+    
+    for (size_t i = 0; i < size; i++) {
+        // Multi-stage trampoline mapping
+        uint8_t val = data[i];
+        for (int stage = 0; stage < TRAMPOLINE_ITERATIONS; stage++) {
+            val = handle->trampoline_table[val];
+            // Inject entropy from position and stage
+            val ^= (uint8_t)(i * stage + handle->stats.operations_count);
+        }
+        data[i] = val;
+    }
+}
+
+/**
+ * @brief Apply avalanche effect for maximum diffusion
+ * 
+ * @param data Data to transform
+ * @param size Size of data
+ */
+static void ece_apply_avalanche(uint8_t* data, size_t size) {
+    if (!data || size == 0) return;
+    
+    // Forward avalanche pass
+    for (size_t i = 1; i < size; i++) {
+        data[i] ^= data[i-1];
+        data[i] = (data[i] << 1) | (data[i] >> 7); // Rotate left by 1
+    }
+    
+    // Backward avalanche pass
+    for (size_t i = size - 1; i > 0; i--) {
+        data[i-1] ^= data[i];
+        data[i-1] = (data[i-1] << 3) | (data[i-1] >> 5); // Rotate left by 3
+    }
+    
+    // Cross-diffusion pass
+    if (size >= 4) {
+        for (size_t i = 0; i < size - 3; i += 4) {
+            // XOR with distant positions for maximum chaos
+            data[i] ^= data[i+3];
+            data[i+1] ^= data[i+2];
+            data[i+2] ^= data[i+1] ^ data[i];
+            data[i+3] ^= data[i+2] ^ data[i+1] ^ data[i];
+        }
+    }
+}

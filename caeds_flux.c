@@ -515,5 +515,9 @@ static charm_status_t caeds_flux_collect_network(caeds_flux_context_t context,
     
     // Set non-blocking mode
     int flags = fcntl(sock, F_GETFL, 0);
-    fcntl(sock, F_SETFL, flags | 
-(Content truncated due to size limit. Use line ranges to read in chunks)
+    fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+    
+    close(sock);
+    state->available = true;
+    return CHARM_SUCCESS;
+}
