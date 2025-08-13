@@ -72,6 +72,20 @@ typedef struct {
 } simd_capabilities_t;
 
 /**
+ * @brief Check if AVX2 is supported
+ * 
+ * @return bool True if AVX2 is supported
+ */
+bool avx2_is_supported(void);
+
+/**
+ * @brief Check if NEON is supported
+ * 
+ * @return bool True if NEON is supported  
+ */
+bool neon_is_supported(void);
+
+/**
  * @brief Detect SIMD capabilities
  * 
  * @param capabilities Capabilities structure to fill

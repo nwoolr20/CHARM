@@ -1,5 +1,26 @@
 
 /**
+ * @file charm.h
+ * @brief Main header file for the CHARM system
+ */
+
+#ifndef CHARM_H
+#define CHARM_H
+
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief CHARM digest size in bytes
+ */
+#define CHARM_DIGEST_SIZE 32
+
+/**
  * @brief Hex digest size in bytes (including null terminator)
  */
 #define CHARM_HEX_DIGEST_SIZE (CHARM_DIGEST_SIZE * 2 + 1)
@@ -13,6 +34,19 @@
  * @brief Default entropy quality threshold
  */
 #define CHARM_DEFAULT_ENTROPY_THRESHOLD 0.6
+
+/**
+ * @brief CHARM status codes
+ */
+typedef enum {
+    CHARM_SUCCESS = 0,
+    CHARM_ERROR_INVALID_PARAMETER = -1,
+    CHARM_ERROR_NOT_INITIALIZED = -2,
+    CHARM_ERROR_MEMORY_ALLOCATION = -3,
+    CHARM_ERROR_IO = -4,
+    CHARM_ERROR_ENTROPY_LOW = -5,
+    CHARM_ERROR_SYSTEM = -6
+} charm_status_t;
 
 /**
  * @brief Entropy source information
@@ -36,5 +70,18 @@ typedef struct {
     bool finalized;             // Whether context is finalized
 } charm_digest_ctx_t;
 
+/**
+ * @brief System states
+ */
+typedef enum {
+    CHARM_STATE_INIT,      // System initializing
+    CHARM_STATE_RUN,       // Normal operation
+    CHARM_STATE_DEGRADED,  // Degraded entropy quality
+    CHARM_STATE_FAILOVER   // Using fallback entropy sources
+} charm_system_state_t;
+
 #ifdef __cplusplus
 }
+#endif
+
+#endif /* CHARM_H */

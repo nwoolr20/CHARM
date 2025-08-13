@@ -9,7 +9,8 @@
  */
 
 #define _POSIX_C_SOURCE 200809L
-#include "../include/ece_core.h"
+#include "ece_core.h"
+#include "avx2_detect.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +18,14 @@
 #include <time.h>
 #include <unistd.h> // For getpid()
 #include <stdint.h> // For uintptr_t
+
+// AVX2 SIMD acceleration
+#if defined(__AVX2__)
+#include <immintrin.h>
+#define SIMD_AVAILABLE 1
+#else
+#define SIMD_AVAILABLE 0
+#endif
 
 // Constants for the Entropic Collapse Function
 #define ECE_BLOCK_SIZE 64
@@ -62,6 +71,11 @@ static void ece_collapse_block(ece_handle_t handle, const uint8_t* block);
 static uint8_t ece_ternary_operation(uint8_t a, uint8_t b, uint8_t c);
 static void ece_apply_trampoline(ece_handle_t handle, uint8_t* data, size_t size);
 static void ece_apply_avalanche(uint8_t* data, size_t size);
+
+// SIMD-accelerated functions
+static void ece_simd_chaos_injection(uint8_t* data, size_t size);
+static void ece_simd_entropy_diffusion(uint8_t* data, size_t size);
+static void ece_simd_temporal_mixing(uint8_t* data, size_t size, uint64_t time_seed);
 
 /**
  * @brief Initialize the ECE context
@@ -411,41 +425,42 @@ static void ece_init_trampoline_table(ece_handle_t handle) {
         return;
     }
     
-    // Initialize table with identity mapping
+    // Initialize table with deterministic permutation for reproducible results
+    // This creates a non-linear, but deterministic trampoline mapping
     for (int i = 0; i < TRAMPOLINE_TABLE_SIZE; i++) {
-        handle->trampoline_table[i] = (uint8_t)i;
+        // Create a deterministic but non-linear mapping
+        uint32_t x = (uint32_t)i;
+        
+        // Apply multiple rounds of mixing for good avalanche
+        x ^= x >> 13;
+        x *= 0x85ebca6b;
+        x ^= x >> 16;
+        x *= 0xc2b2ae35;
+        x ^= x >> 16;
+        
+        // Add some chaos constants inspired by quantum field theory
+        x ^= 0x9e3779b9; // Golden ratio constant
+        x += 0x6a09e667; // From SHA-256 constants
+        
+        handle->trampoline_table[i] = (uint8_t)(x & 0xFF);
     }
     
-#include <unistd.h> // For getpid()
-
-    // Shuffle table using Fisher-Yates algorithm with better entropy source
-    // Use combination of time, pointer value, and process ID for better randomization
-    unsigned int seed = (unsigned int)time(NULL);
-    seed ^= (unsigned int)(uintptr_t)handle;
-    seed ^= (unsigned int)getpid();
-    
-    // Add some runtime entropy by measuring CPU cycles
-    struct timespec ts_start, ts_end;
-    clock_gettime(CLOCK_MONOTONIC, &ts_start);
-    for (volatile int i = 0; i < 10000; i++) { /* Busy loop to add timing jitter */ }
-    clock_gettime(CLOCK_MONOTONIC, &ts_end);
-    unsigned int jitter = (unsigned int)((ts_end.tv_nsec - ts_start.tv_nsec) & 0xFFFFFFFF);
-    seed ^= jitter;
-    
-    srand(seed);
-    
-    // Apply multiple shuffle passes for better mixing
+    // Apply deterministic shuffle to improve distribution
     for (int pass = 0; pass < 3; pass++) {
-        for (int i = TRAMPOLINE_TABLE_SIZE - 1; i > 0; i--) {
-            int j = rand() % (i + 1);
+        for (int i = 0; i < TRAMPOLINE_TABLE_SIZE; i++) {
+            // Deterministic but chaotic index selection
+            uint32_t j_seed = (uint32_t)(i * 0x9e3779b9 + pass * 0x85ebca6b);
+            j_seed ^= j_seed >> 13;
+            j_seed *= 0xc2b2ae35;
+            j_seed ^= j_seed >> 16;
+            
+            int j = j_seed % TRAMPOLINE_TABLE_SIZE;
+            
+            // Swap elements
             uint8_t temp = handle->trampoline_table[i];
             handle->trampoline_table[i] = handle->trampoline_table[j];
             handle->trampoline_table[j] = temp;
         }
-        
-        // Mix in more entropy between passes
-        seed = seed * 1103515245 + 12345;
-        srand(seed ^ (unsigned int)clock());
     }
 }
 
@@ -469,12 +484,22 @@ static void ece_collapse_block(ece_handle_t handle, const uint8_t* block) {
         temp_state[i] ^= block[i % ECE_BLOCK_SIZE];
     }
     
+    // SIMD-accelerated chaos injection for quantum field collapse simulation
+    ece_simd_chaos_injection(temp_state, ECE_STATE_SIZE);
+    
     // Apply trampoline mapping if enabled
     if (handle->use_trampoline) {
         ece_apply_trampoline(handle, temp_state, ECE_STATE_SIZE);
     }
     
-    // Perform collapse rounds
+    // Get deterministic time entropy based on input content instead of wall clock time
+    uint64_t time_entropy = 0;
+    for (size_t i = 0; i < ECE_STATE_SIZE; i++) {
+        time_entropy = time_entropy * 31 + temp_state[i];
+    }
+    time_entropy ^= handle->stats.operations_count;
+    
+    // Perform collapse rounds with SIMD acceleration
     for (uint32_t round = 0; round < handle->collapse_rounds; round++) {
         // Apply ternary logic if enabled
         if (handle->use_ternary_logic) {
@@ -498,9 +523,19 @@ static void ece_collapse_block(ece_handle_t handle, const uint8_t* block) {
                                          (temp_state[ECE_STATE_SIZE-1] * 0x1B);
         }
         
+        // SIMD entropy diffusion - walker plumes effect
+        if (round % 3 == 0) {
+            ece_simd_entropy_diffusion(temp_state, ECE_STATE_SIZE);
+        }
+        
         // Apply trampoline mapping every other round if enabled
         if (handle->use_trampoline && (round % 2 == 1)) {
             ece_apply_trampoline(handle, temp_state, ECE_STATE_SIZE);
+        }
+        
+        // Temporal mixing for time-dependent entropy
+        if (round % 4 == 3) {
+            ece_simd_temporal_mixing(temp_state, ECE_STATE_SIZE, time_entropy ^ (round * 0x9E3779B9));
         }
         
         // Apply round constant
@@ -540,6 +575,247 @@ static uint8_t ece_ternary_operation(uint8_t a, uint8_t b, uint8_t c) {
         trits_b[i] %= 3;
         trits_c[i] %= 3;
         
-        // Ternary majority function
-        if ((trits_a[i] == trits_b[i])
-(Content truncated due to size limit. Use line ranges to read in chunks)
+        // Ternary majority function with chaos injection
+        if ((trits_a[i] == trits_b[i]) || (trits_a[i] == trits_c[i])) {
+            result_trits[i] = trits_a[i];
+        } else if (trits_b[i] == trits_c[i]) {
+            result_trits[i] = trits_b[i];
+        } else {
+            // Chaos injection for maximum entropy
+            result_trits[i] = (trits_a[i] + trits_b[i] + trits_c[i]) % 3;
+        }
+    }
+    
+    // Convert back to byte representation
+    uint8_t result = 0;
+    for (int i = 0; i < 3; i++) {
+        result |= (result_trits[i] & 0x3) << (i * 2);
+    }
+    
+    return result;
+}
+
+/**
+ * @brief Apply trampoline mapping for non-linear transformations
+ * 
+ * @param handle ECE context handle
+ * @param data Data to transform
+ * @param size Size of data
+ */
+static void ece_apply_trampoline(ece_handle_t handle, uint8_t* data, size_t size) {
+    if (!handle || !data || size == 0) return;
+    
+    for (size_t i = 0; i < size; i++) {
+        // Multi-stage trampoline mapping
+        uint8_t val = data[i];
+        for (int stage = 0; stage < TRAMPOLINE_ITERATIONS; stage++) {
+            val = handle->trampoline_table[val];
+            // Inject entropy from position and stage
+            val ^= (uint8_t)(i * stage + handle->stats.operations_count);
+        }
+        data[i] = val;
+    }
+}
+
+/**
+ * @brief Apply avalanche effect for maximum diffusion
+ * 
+ * @param data Data to transform
+ * @param size Size of data
+ */
+static void ece_apply_avalanche(uint8_t* data, size_t size) {
+    if (!data || size == 0) return;
+    
+    // Forward avalanche pass
+    for (size_t i = 1; i < size; i++) {
+        data[i] ^= data[i-1];
+        data[i] = (data[i] << 1) | (data[i] >> 7); // Rotate left by 1
+    }
+    
+    // Backward avalanche pass
+    for (size_t i = size - 1; i > 0; i--) {
+        data[i-1] ^= data[i];
+        data[i-1] = (data[i-1] << 3) | (data[i-1] >> 5); // Rotate left by 3
+    }
+    
+    // Cross-diffusion pass
+    if (size >= 4) {
+        for (size_t i = 0; i < size - 3; i += 4) {
+            // XOR with distant positions for maximum chaos
+            data[i] ^= data[i+3];
+            data[i+1] ^= data[i+2];
+            data[i+2] ^= data[i+1] ^ data[i];
+            data[i+3] ^= data[i+2] ^ data[i+1] ^ data[i];
+        }
+    }
+}
+
+/**
+ * @brief SIMD-accelerated chaos injection for maximum entropy
+ * 
+ * This function uses AVX2 instructions to inject chaotic patterns into
+ * the data stream, simulating quantum field collapse effects at high speed.
+ * 
+ * @param data Data to transform
+ * @param size Size of data
+ */
+static void ece_simd_chaos_injection(uint8_t* data, size_t size) {
+    if (!data || size == 0) return;
+    
+#if SIMD_AVAILABLE && defined(__AVX2__)
+    if (avx2_is_supported() && size >= 32) {
+        // Process 32-byte chunks with AVX2
+        size_t simd_size = (size / 32) * 32;
+        
+        // Chaos constants for quantum field simulation
+        const __m256i chaos_seed1 = _mm256_set_epi64x(0x6A09E667F3BCC908ULL, 0xBB67AE8584CAA73BULL,
+                                                      0x3C6EF372FE94F82BULL, 0xA54FF53A5F1D36F1ULL);
+        const __m256i chaos_seed2 = _mm256_set_epi64x(0x510E527FADE682D1ULL, 0x9B05688C2B3E6C1FULL,
+                                                      0x1F83D9ABFB41BD6BULL, 0x5BE0CD19137E2179ULL);
+        
+        for (size_t i = 0; i < simd_size; i += 32) {
+            __m256i data_vec = _mm256_loadu_si256((const __m256i*)(data + i));
+            
+            // Lightning-like entropy detonation using deterministic position-dependent chaos
+            __m256i pos_chaos = _mm256_set1_epi64x((long long)(i * 0x9E3779B97F4A7C15ULL));
+            
+            // Quantum field collapse simulation - multi-stage chaos injection
+            data_vec = _mm256_xor_si256(data_vec, chaos_seed1);
+            data_vec = _mm256_add_epi64(data_vec, pos_chaos);
+            data_vec = _mm256_xor_si256(data_vec, _mm256_slli_epi64(data_vec, 13));
+            data_vec = _mm256_xor_si256(data_vec, chaos_seed2);
+            data_vec = _mm256_xor_si256(data_vec, _mm256_srli_epi64(data_vec, 17));
+            data_vec = _mm256_add_epi64(data_vec, _mm256_set1_epi64x(0x85EBCA6B));
+            data_vec = _mm256_xor_si256(data_vec, _mm256_slli_epi64(data_vec, 5));
+            
+            _mm256_storeu_si256((__m256i*)(data + i), data_vec);
+        }
+        
+        // Handle remaining bytes
+        for (size_t i = simd_size; i < size; i++) {
+            data[i] ^= (uint8_t)(i * 0x9E + 0x37);
+        }
+    } else
+#endif
+    {
+        // Fallback scalar implementation
+        for (size_t i = 0; i < size; i++) {
+            data[i] ^= (uint8_t)(i * 0x9E + 0x37 + (i >> 3));
+            data[i] = (data[i] << (i % 8)) | (data[i] >> (8 - (i % 8)));
+        }
+    }
+}
+
+/**
+ * @brief SIMD-accelerated entropy diffusion using walker plumes
+ * 
+ * This function implements SIMD walker plumes that spread entropy
+ * across the data using parallel processing for maximum performance.
+ * 
+ * @param data Data to transform
+ * @param size Size of data
+ */
+static void ece_simd_entropy_diffusion(uint8_t* data, size_t size) {
+    if (!data || size == 0) return;
+    
+#if SIMD_AVAILABLE && defined(__AVX2__)
+    if (avx2_is_supported() && size >= 32) {
+        size_t simd_size = (size / 32) * 32;
+        
+        // Walker plume constants
+        const __m256i walker_mask1 = _mm256_set1_epi32(0x55AA55AA);
+        const __m256i walker_mask2 = _mm256_set1_epi32(0xAA55AA55);
+        
+        for (size_t i = 0; i < simd_size; i += 32) {
+            __m256i data_vec = _mm256_loadu_si256((const __m256i*)(data + i));
+            
+            // Entropy walker plume - bidirectional diffusion
+            __m256i left_walk = _mm256_slli_epi32(data_vec, 1);
+            __m256i right_walk = _mm256_srli_epi32(data_vec, 1);
+            
+            // Temporal trigger simulation
+            __m256i temporal_trigger = _mm256_xor_si256(left_walk, right_walk);
+            temporal_trigger = _mm256_and_si256(temporal_trigger, walker_mask1);
+            
+            // Echo effects for maximum entropy propagation
+            data_vec = _mm256_xor_si256(data_vec, temporal_trigger);
+            data_vec = _mm256_xor_si256(data_vec, walker_mask2);
+            
+            // Final plume expansion
+            data_vec = _mm256_add_epi32(data_vec, _mm256_set1_epi32(0x9E3779B9));
+            
+            _mm256_storeu_si256((__m256i*)(data + i), data_vec);
+        }
+        
+        // Handle remaining bytes
+        for (size_t i = simd_size; i < size; i++) {
+            data[i] ^= data[(i + 1) % size] ^ 0x9E;
+        }
+    } else
+#endif
+    {
+        // Fallback scalar walker implementation
+        for (size_t i = 0; i < size; i++) {
+            uint8_t left = i > 0 ? data[i-1] : data[size-1];
+            uint8_t right = i < size-1 ? data[i+1] : data[0];
+            data[i] ^= (left >> 1) ^ (right << 1) ^ 0x9E;
+        }
+    }
+}
+
+/**
+ * @brief SIMD-accelerated temporal mixing with time-based entropy
+ * 
+ * This function adds temporal dimension to entropy collapse, creating
+ * time-dependent chaos that enhances unpredictability.
+ * 
+ * @param data Data to transform
+ * @param size Size of data  
+ * @param time_seed Time-based seed for temporal entropy
+ */
+static void ece_simd_temporal_mixing(uint8_t* data, size_t size, uint64_t time_seed) {
+    if (!data || size == 0) return;
+    
+#if SIMD_AVAILABLE && defined(__AVX2__)
+    if (avx2_is_supported() && size >= 32) {
+        size_t simd_size = (size / 32) * 32;
+        
+        // Temporal entropy vectors
+        __m256i time_vec = _mm256_set1_epi64x((long long)time_seed);
+        const __m256i time_mult = _mm256_set1_epi64x(0x5DEECE66D);
+        const __m256i time_add = _mm256_set1_epi64x(0xB);
+        
+        for (size_t i = 0; i < simd_size; i += 32) {
+            __m256i data_vec = _mm256_loadu_si256((const __m256i*)(data + i));
+            
+            // Evolve temporal entropy (linear congruential generator in SIMD)
+            time_vec = _mm256_add_epi64(_mm256_mul_epi32(time_vec, time_mult), time_add);
+            
+            // Apply temporal chaos
+            data_vec = _mm256_xor_si256(data_vec, time_vec);
+            
+            // Rotate with time-dependent shift
+            uint8_t shift_amt = (uint8_t)(time_seed >> (i % 64)) & 7;
+            if (shift_amt > 0) {
+                __m256i left_shift = _mm256_slli_epi32(data_vec, shift_amt);
+                __m256i right_shift = _mm256_srli_epi32(data_vec, (32 - shift_amt));
+                data_vec = _mm256_or_si256(left_shift, right_shift);
+            }
+            
+            _mm256_storeu_si256((__m256i*)(data + i), data_vec);
+        }
+        
+        // Handle remaining bytes
+        for (size_t i = simd_size; i < size; i++) {
+            data[i] ^= (uint8_t)(time_seed >> (i % 64));
+        }
+    } else
+#endif
+    {
+        // Fallback scalar temporal mixing
+        for (size_t i = 0; i < size; i++) {
+            data[i] ^= (uint8_t)(time_seed >> (i % 64));
+            time_seed = time_seed * 1103515245 + 12345; // Simple LCG
+        }
+    }
+}
