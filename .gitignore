@@ -58,6 +58,8 @@ perf.data*
 blake3/
 lib/
 external/
+BLAKE3-master/
+third_party/crypto/
 
 # Third party built libraries
 libblake3.a
