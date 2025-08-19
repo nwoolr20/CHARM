@@ -1,0 +1,46 @@
+CHARM Comprehensive Benchmark Tool
+==================================
+
+CHARM Performance Benchmark
+===========================
+
+Testing entropy-native hashing against established algorithms
+
+Size       | Algorithm    | Time (ms)    | Throughput      | Digest (first 16 bytes)
+-----------+--------------+--------------+-----------------+---------------------------------
+64         | CHARM        |    0.001 ms |   102.39 MB/s | 2f1f187ddbc3538bd3145135c96dad8c
+64         | SHA-256      |    0.001 ms |   106.50 MB/s | b99228f69db22b359a008e8f694e1f2e
+64         | BLAKE3       |    0.000 ms |   503.59 MB/s | 962b5397f66b5cdbbadfbf38a8524ae7
+
+256        | CHARM        |    0.000 ms |  3335.25 MB/s | d582edd53827d4c1fb0431bc574e6316
+256        | SHA-256      |    0.000 ms |  1138.72 MB/s | cc7543aa25307e9f59048a53b59da726
+256        | BLAKE3       |    0.000 ms |   720.82 MB/s | 52db888b27f2c87b65b1afef16fe2b69
+
+1024       | CHARM        |    0.000 ms | 14774.02 MB/s | 4c8f949fbde30aa2b651e2430a5b85e3
+1024       | SHA-256      |    0.001 ms |  1420.87 MB/s | 0154918c0ec3df0047f7689ea190c3b0
+1024       | BLAKE3       |    0.001 ms |   770.52 MB/s | bdba315fd738bdad7c639af86e6c0150
+
+4096       | CHARM        |    0.002 ms |  1602.50 MB/s | 5fa0766dc5e4d4281998753ab7fc9c11
+4096       | SHA-256      |    0.003 ms |  1503.62 MB/s | 705693dc06689f7643de7d0c9c5b5c2a
+4096       | BLAKE3       |    0.004 ms |   877.16 MB/s | d365fdbcf4c86d4e3dfb6b8c2123902d
+
+16384      | CHARM        |    0.003 ms |  5526.28 MB/s | 28a787ccf2015d85d4e0c90312776955
+16384      | SHA-256      |    0.010 ms |  1526.74 MB/s | 6353fbd80a44b61e852d3143a3ad232c
+16384      | BLAKE3       |    0.007 ms |  2399.34 MB/s | b72b79e7100a129434f2976bdf52574e
+
+65536      | CHARM        |    0.011 ms |  5679.39 MB/s | fc4e3c64b60c3ac93cafc4696a693e1f
+65536      | SHA-256      |    0.042 ms |  1494.41 MB/s | ec71ce6fb5f7ee95d608eee31d4ce25c
+65536      | BLAKE3       |    0.026 ms |  2401.45 MB/s | 25be7a0b11526bc064bcf43f94ad459c
+
+262144     | CHARM        |    0.047 ms |  5315.85 MB/s | f08f25abeff4c5c815c3d512da31fa99
+262144     | SHA-256      |    0.167 ms |  1499.12 MB/s | 566aec31b6a69ac51caa1ce487c9f693
+262144     | BLAKE3       |    0.103 ms |  2433.42 MB/s | 7b5502285e0fb20094f9c0c2c0e268a2
+
+Benchmark complete!
+
+CHARM Features:
+- Entropy-native design with quantum field collapse simulation
+- SIMD-accelerated chaos injection and entropy diffusion
+- Ternary logic gates and trampoline mappings
+- Temporal entropy mixing with avalanche effects
+- Designed to exceed conventional hash function performance
