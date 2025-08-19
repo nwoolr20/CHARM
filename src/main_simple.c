@@ -108,7 +108,7 @@ static int hash_data(const uint8_t* data, size_t size, uint8_t* digest) {
         .use_trampoline = true,
         .use_avalanche = true,
         .entropy_quality = 0.8,
-        .constant_time = true  // Default to constant-time for timing attack mitigation
+        // Note: constant_time is now always enabled for timing attack mitigation
     };
     
     ece_handle_t handle = ece_init(&config);

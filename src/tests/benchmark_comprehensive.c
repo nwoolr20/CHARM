@@ -60,7 +60,7 @@ static int benchmark_charm(const uint8_t* data, size_t size, benchmark_result_t*
         .use_trampoline = false,                     // Always skip trampoline for speed  
         .use_avalanche = false,                      // Skip avalanche for small inputs
         .entropy_quality = 0.3,                     // Minimal quality for maximum speed
-        .constant_time = true                       // Use constant-time by default for security
+        // Note: constant_time is now always enabled for timing attack mitigation
     };
     
     // Standard approach - optimize configuration instead of internal access
@@ -239,7 +239,7 @@ static void run_digest_comparison(void) {
             .use_trampoline = true,
             .use_avalanche = true,
             .entropy_quality = 0.8,
-            .constant_time = true  // Use constant-time by default for security
+            // Note: constant_time is now always enabled for timing attack mitigation
         };
         
         ece_handle_t handle = ece_init(&config);
