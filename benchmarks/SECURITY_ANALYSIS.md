@@ -50,9 +50,9 @@ Comprehensive security analysis of CHARM cryptographic system focusing on common
 **Status: IMPROVED** ✅
 - **IMPLEMENTED**: Constant-time configuration option (`constant_time` flag)
 - **IMPLEMENTED**: Constant-time ternary operations without conditional branches
-- **IMPLEMENTED**: Deterministic processing paths when constant-time mode is enabled
-- Performance optimizations maintain variable timing by default for speed
-- **Recommendation**: Enable `constant_time = true` for high-security applications
+- **IMPLEMENTED**: Deterministic processing paths - always enabled for security
+- **ALWAYS ENABLED**: Constant-time operations now mandatory for timing attack mitigation
+- **STATUS**: Timing attacks permanently mitigated
 
 #### Cache Attacks  
 **Status: MITIGATED** ✅
@@ -60,7 +60,7 @@ Comprehensive security analysis of CHARM cryptographic system focusing on common
 - **ELIMINATED**: Data-dependent table lookups replaced with mathematical transformations
 - **IMPLEMENTED**: Cache-timing resistant bit manipulation operations
 - SIMD operations use predictable access patterns
-- **Recommendation**: Use `constant_time = true` to automatically enable all mitigations
+- **STATUS**: All mitigations automatically enabled
 
 ### 6. Input Validation
 **Status: EXCELLENT** ✅
@@ -78,30 +78,30 @@ Comprehensive security analysis of CHARM cryptographic system focusing on common
 ## Security Recommendations
 
 ### Immediate Actions ✅ **IMPLEMENTED**
-1. **Constant-time implementation**: ✅ **IMPLEMENTED** - Set `constant_time = true` in configuration
+1. **Constant-time implementation**: ✅ **ALWAYS ENABLED** - Timing attacks permanently mitigated
 2. **Side-channel testing**: Use specialized tools like `dudect` for timing analysis  
 3. **Formal verification**: Consider formal cryptographic analysis for critical applications
 
 ### Side-Channel Protection Usage
 ```c
-// High-security mode with side-channel protection
+// High-security configuration (constant-time automatically enabled)
 ece_config_t secure_config = {
     .collapse_rounds = 20,
     .use_ternary_logic = true,
     .use_trampoline = true,
     .use_avalanche = true,
-    .entropy_quality = 0.8,
-    .constant_time = true  // Enable all side-channel mitigations
+    .entropy_quality = 0.8
+    // Note: constant-time is always enabled for timing attack mitigation
 };
 
-// Performance mode (default)
+// Performance mode (constant-time still enabled)
 ece_config_t fast_config = {
     .collapse_rounds = 3,
     .use_ternary_logic = false,
     .use_trampoline = false,
     .use_avalanche = false,
-    .entropy_quality = 0.3,
-    .constant_time = false  // Maximum performance
+    .entropy_quality = 0.3
+    // Note: constant-time is always enabled for timing attack mitigation
 };
 ```
 

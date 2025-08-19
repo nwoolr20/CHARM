@@ -27,8 +27,8 @@ CHARM has been **successfully optimized** for small inputs (64B, 256B, 1KB) and 
 ### Implemented Mitigations
 
 1. **Constant-Time Configuration**
-   - Added `constant_time` boolean flag to `ece_config_t`
-   - Automatic selection of secure vs performance modes
+   - Constant-time operations are now always enabled for timing attack mitigation
+   - No configuration flag needed - security is automatically enabled
 
 2. **Cache Attack Resistance**
    - **ELIMINATED**: Data-dependent table lookups in trampoline mapping
@@ -43,24 +43,24 @@ CHARM has been **successfully optimized** for small inputs (64B, 256B, 1KB) and 
 ### Usage
 
 ```c
-// High-security mode with side-channel protection
+// High-security configuration (constant-time automatically enabled)
 ece_config_t secure_config = {
     .collapse_rounds = 20,
     .use_ternary_logic = true,
     .use_trampoline = true,
     .use_avalanche = true,
-    .entropy_quality = 0.8,
-    .constant_time = true  // Enable all side-channel mitigations
+    .entropy_quality = 0.8
+    // Note: constant-time is always enabled for timing attack mitigation
 };
 
-// Performance mode (default)
+// Performance-optimized configuration (constant-time still enabled)
 ece_config_t fast_config = {
     .collapse_rounds = 1,
     .use_ternary_logic = false,
     .use_trampoline = false,
     .use_avalanche = false,
-    .entropy_quality = 0.1,
-    .constant_time = false  // Maximum performance
+    .entropy_quality = 0.1
+    // Note: constant-time is always enabled for timing attack mitigation
 };
 ```
 
