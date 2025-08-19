@@ -90,16 +90,18 @@ CHARM/
 
 **CHARM (Chaotic Hierarchical Adaptive Resilient Mechanism)**
 - **Variants**: CHARM-256, CHARM-384, CHARM-512
-- **Mode**: Linear streaming hash (NOT tree-based)
+- **Mode**: Sequential streaming hash with non-linear transformations (NOT tree-based)
 - **Design**: Entropy-native with adaptive round scheduling
 - **Version**: CHARM/1.0 (frozen specification)
 
 ## Key Features
 
-### Linear Streaming Design
-CHARM operates as a single-state, linear streaming hash. It explicitly rejects tree hashing approaches:
+### Sequential Streaming Design with Non-Linear Transformations
+CHARM operates as a single-state, sequential streaming hash with non-linear round functions. It explicitly rejects tree hashing approaches:
 - No chunk-level fanout or hierarchical combining
 - No Merkle trees or authenticated data structures  
+- Sequential processing structure for simplicity and auditability
+- Non-linear ARX transformations, adaptive scheduling, and collapse functions for security
 - Parallelism achieved within round functions via SIMD
 - Digest invariant to input chunking
 
@@ -170,7 +172,7 @@ make docs                   # Show documentation locations
 ## Performance and Security
 
 ### Design Goals Achieved
-- **Linear Streaming**: Simpler than tree-based designs, easier to audit
+- **Sequential Streaming**: Simpler than tree-based designs, easier to audit
 - **Entropy Adaptive**: More rounds for low-entropy inputs, fewer for high-entropy
 - **SIMD Optimizable**: Round functions designed for parallel execution
 - **Competitive Performance**: Target 1-10 cycles/byte depending on entropy
