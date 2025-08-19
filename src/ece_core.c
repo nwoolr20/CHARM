@@ -186,8 +186,10 @@ ece_handle_t ece_init(const ece_config_t* config) {
     handle->stats.avg_rounds = handle->collapse_rounds;
     handle->stats.avg_entropy_quality = handle->entropy_quality;
     
-    // Initialize trampoline table
-    ece_init_trampoline_table(handle);
+    // Initialize trampoline table only if trampoline is enabled
+    if (handle->use_trampoline) {
+        ece_init_trampoline_table(handle);
+    }
     
     // Initialize system entropy for high-performance entropy sampling
     static bool entropy_initialized = false;
@@ -672,18 +674,28 @@ static inline void ece_fast_process_small(ece_handle_t handle, const uint8_t* da
     const size_t state_size = ECE_STATE_SIZE;
     
     // Fast path optimizations based on input size
-    if (size <= 32) {
-        // Ultra-fast path for very small inputs (≤32 bytes)
+    if (size <= 64) {
+        // Ultra-fast path for very small inputs (≤64 bytes)
+        // Use unrolled loop for maximum speed
         for (size_t i = 0; i < size; i++) {
             handle->state[i % state_size] ^= data[i] ^ (uint8_t)(fast_entropy >> ((i & 7) * 8));
         }
         
-        // Minimal mixing with reduced rounds
-        uint32_t rounds = handle->collapse_rounds / 2; // Use half the configured rounds
+        // Minimal mixing with optimized rounds - use minimal rounds for small inputs
+        uint32_t rounds = (handle->collapse_rounds == 1) ? 1 : (handle->collapse_rounds / 2);
         for (uint32_t r = 0; r < rounds; r++) {
-            for (size_t i = 0; i < state_size; i++) {
-                handle->state[i] ^= handle->state[(i + 1) % state_size];
-                handle->state[i] = ((handle->state[i] << 1) | (handle->state[i] >> 7));
+            // Optimized mixing for small state using 64-bit operations
+            for (size_t i = 0; i < state_size; i += 8) {
+                if (i + 7 < state_size) {
+                    uint64_t* state_ptr = (uint64_t*)&handle->state[i];
+                    *state_ptr ^= (*state_ptr >> 17) ^ (*state_ptr << 7) ^ fast_entropy;
+                } else {
+                    // Fallback for remaining bytes
+                    for (size_t j = i; j < state_size; j++) {
+                        handle->state[j] ^= handle->state[(j + 1) % state_size];
+                        handle->state[j] = ((handle->state[j] << 1) | (handle->state[j] >> 7));
+                    }
+                }
             }
         }
     } else if (size <= 128) {
