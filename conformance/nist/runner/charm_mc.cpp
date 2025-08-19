@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <chrono>
 #include <random>
+#include <sstream>
 
 extern "C" {
 #include "charm.h"

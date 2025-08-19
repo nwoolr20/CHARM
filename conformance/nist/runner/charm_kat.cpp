@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <chrono>
 #include <cstring>
+#include <sstream>
 
 extern "C" {
 #include "charm.h"
