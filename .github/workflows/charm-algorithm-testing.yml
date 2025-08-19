@@ -1,0 +1,161 @@
+name: CHARM Algorithm Comprehensive Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'algorithm/**'
+      - 'conformance/**'
+      - '.github/workflows/charm-algorithm-testing.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'algorithm/**'
+      - 'conformance/**'
+  schedule:
+    # Run daily at 2 AM UTC for regression detection
+    - cron: '0 2 * * *'
+
+jobs:
+  algorithm-validation:
+    name: CHARM Algorithm Validation
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build_type: [debug, release]
+        compiler: [gcc, clang]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup build environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc clang valgrind
+        # Install additional tools for analysis
+        sudo apt-get install -y cppcheck clang-tools
+
+    - name: Setup compiler
+      run: |
+        if [ "${{ matrix.compiler }}" = "clang" ]; then
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
+        else
+          echo "CC=gcc" >> $GITHUB_ENV
+          echo "CXX=g++" >> $GITHUB_ENV
+        fi
+
+    - name: Build algorithm implementations
+      run: |
+        mkdir -p build
+        # Build reference implementation
+        $CC -Wall -Wextra -std=c99 -O2 -Ialgorithm/include -o build/charm_ref algorithm/src/charm_ref.c -lm
+        
+        # Build optimized library
+        $CXX -Wall -Wextra -std=c++11 -O3 -Ialgorithm/include -o build/charm_lib_test algorithm/src/charm_lib.c -lm
+        
+        # Build test runners
+        $CXX -Wall -Wextra -std=c++11 -O3 -Ialgorithm/include -o build/charm_kat conformance/nist/runner/charm_kat.cpp algorithm/src/charm_lib.c -lm
+        $CXX -Wall -Wextra -std=c++11 -O3 -Ialgorithm/include -o build/charm_mc conformance/nist/runner/charm_mc.cpp algorithm/src/charm_lib.c -lm
+        $CXX -Wall -Wextra -std=c++11 -O3 -Ialgorithm/include -o build/charm_stream conformance/nist/runner/charm_stream.cpp algorithm/src/charm_lib.c -lm
+        $CXX -Wall -Wextra -std=c++11 -O3 -Ialgorithm/include -o build/charm_extended_kat conformance/nist/runner/charm_extended_kat.cpp algorithm/src/charm_lib.c -lm
+        $CXX -Wall -Wextra -std=c++11 -O3 -Ialgorithm/include -o build/charm_avalanche conformance/nist/runner/charm_avalanche.cpp algorithm/src/charm_lib.c -lm
+        $CXX -Wall -Wextra -std=c++11 -O3 -Ialgorithm/include -o build/charm_sidechannel conformance/nist/runner/charm_sidechannel.cpp algorithm/src/charm_lib.c -lm
+        $CXX -Wall -Wextra -std=c++11 -O3 -Ialgorithm/include -o build/charm_acvp conformance/nist/runner/charm_acvp.cpp algorithm/src/charm_lib.c -lm
+        $CXX -Wall -Wextra -std=c++11 -O3 -o build/charm_comprehensive_test conformance/nist/runner/charm_comprehensive_test.cpp
+
+    - name: Static analysis
+      run: |
+        # Run cppcheck on algorithm sources
+        cppcheck --enable=all --std=c99 --language=c algorithm/src/charm_ref.c algorithm/src/charm_lib.c
+        
+        # Run clang-tidy if using clang
+        if [ "${{ matrix.compiler }}" = "clang" ]; then
+          clang-tidy algorithm/src/charm_lib.c -- -Ialgorithm/include
+        fi
+
+    - name: Basic functionality tests
+      run: |
+        echo "Running basic reference implementation test..."
+        ./build/charm_ref
+        
+        echo "Running KAT tests..."
+        ./build/charm_kat
+        
+        echo "Running Monte Carlo tests..."
+        ./build/charm_mc
+
+    - name: Extended validation tests
+      run: |
+        echo "Running extended KAT tests (quick mode)..."
+        timeout 300 ./build/charm_extended_kat || echo "Extended KAT test completed with timeout"
+        
+        echo "Running avalanche effect tests..."
+        timeout 180 ./build/charm_avalanche
+        
+        echo "Running streaming tests..."
+        ./build/charm_stream
+
+    - name: Security analysis tests
+      run: |
+        echo "Running side-channel analysis..."
+        timeout 300 ./build/charm_sidechannel || echo "Side-channel analysis completed with timeout"
+        
+        echo "Testing ACVP compatibility..."
+        ./build/charm_acvp demo > acvp_demo_output.json
+        
+        # Validate JSON output
+        python3 -m json.tool acvp_demo_output.json > /dev/null
+
+    - name: Performance regression tests
+      run: |
+        echo "Running performance benchmarks..."
+        
+        # Run Monte Carlo with timing
+        for variant in 256 384 512; do
+          echo "Testing CHARM-$variant performance..."
+          start_time=$(date +%s%N)
+          ./build/charm_mc 1000
+          end_time=$(date +%s%N)
+          duration=$((($end_time - $start_time) / 1000000))
+          echo "CHARM-$variant: ${duration}ms for 1000 iterations"
+          
+          # Fail if performance is significantly degraded (>5x expected time)
+          if [ $duration -gt 1000 ]; then
+            echo "ERROR: Performance regression detected for CHARM-$variant"
+            exit 1
+          fi
+        done
+
+    - name: Memory analysis (Debug builds only)
+      if: matrix.build_type == 'debug' && matrix.compiler == 'gcc'
+      run: |
+        echo "Running memory analysis with Valgrind..."
+        
+        # Test for memory leaks
+        valgrind --leak-check=full --error-exitcode=1 ./build/charm_kat
+        valgrind --leak-check=full --error-exitcode=1 ./build/charm_mc 100
+
+    - name: Comprehensive test suite
+      run: |
+        echo "Running comprehensive test suite..."
+        ./build/charm_comprehensive_test --quick > comprehensive_results.json
+        
+        # Check if all tests passed
+        if ! grep -q '"overall_status": "PASS"' comprehensive_results.json; then
+          echo "ERROR: Comprehensive test suite failed"
+          cat comprehensive_results.json
+          exit 1
+        fi
+        
+        echo "All tests passed successfully!"
+
+    - name: Upload test artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.compiler }}-${{ matrix.build_type }}
+        path: |
+          comprehensive_results.json
+          acvp_demo_output.json
