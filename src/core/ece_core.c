@@ -131,7 +131,7 @@ struct ece_context {
     bool use_trampoline;
     bool use_avalanche;
     double entropy_quality;
-    bool constant_time;          // Side-channel resistant mode
+    // Note: constant_time is now always enabled for timing attack mitigation
     
     // State
     uint8_t state[ECE_STATE_SIZE];
@@ -192,7 +192,7 @@ ece_handle_t ece_init(const ece_config_t* config) {
     handle->entropy_quality = (config->entropy_quality >= 0.0 && 
                               config->entropy_quality <= 1.0) ? 
                               config->entropy_quality : 0.7;
-    handle->constant_time = config->constant_time;
+    // Note: constant_time is now always enabled for timing attack mitigation
     
     // Initialize state
     memset(handle->state, 0, ECE_STATE_SIZE);
@@ -526,6 +526,7 @@ ece_status_t ece_collapse(const uint8_t* data, size_t data_size,
     config.use_trampoline = true;
     config.use_avalanche = true;
     config.entropy_quality = 0.7;
+    // Note: constant_time is now always enabled for timing attack mitigation
     
     // Initialize context
     ece_handle_t handle = ece_init(&config);
@@ -778,16 +779,10 @@ static inline void ece_fast_process_small(ece_handle_t handle, const uint8_t* da
         if (handle->use_ternary_logic && size > 64) {
             for (size_t i = 0; i < state_size; i += 3) {
                 if (i + 2 < state_size) {
-                    uint8_t result;
-                    if (handle->constant_time) {
-                        result = ece_ternary_operation_ct(handle->state[i], 
-                                                        handle->state[i + 1], 
-                                                        handle->state[i + 2]);
-                    } else {
-                        result = ece_ternary_operation(handle->state[i], 
-                                                     handle->state[i + 1], 
-                                                     handle->state[i + 2]);
-                    }
+                    // Always use constant-time ternary operation for timing attack mitigation
+                    uint8_t result = ece_ternary_operation_ct(handle->state[i], 
+                                                            handle->state[i + 1], 
+                                                            handle->state[i + 2]);
                     handle->state[i] = result;
                 }
             }
@@ -816,27 +811,18 @@ static inline void ece_fast_process_small(ece_handle_t handle, const uint8_t* da
         if (handle->use_ternary_logic) {
             for (size_t i = 0; i < state_size; i += 3) {
                 if (i + 2 < state_size) {
-                    uint8_t result;
-                    if (handle->constant_time) {
-                        result = ece_ternary_operation_ct(handle->state[i], 
-                                                        handle->state[i + 1], 
-                                                        handle->state[i + 2]);
-                    } else {
-                        result = ece_ternary_operation(handle->state[i], 
-                                                     handle->state[i + 1], 
-                                                     handle->state[i + 2]);
-                    }
+                    // Always use constant-time ternary operation for timing attack mitigation
+                    uint8_t result = ece_ternary_operation_ct(handle->state[i], 
+                                                            handle->state[i + 1], 
+                                                            handle->state[i + 2]);
                     handle->state[i] = result;
                 }
             }
         }
         
         if (handle->use_trampoline) {
-            if (handle->constant_time) {
-                ece_apply_trampoline_ct(handle, handle->state, state_size);
-            } else {
-                ece_apply_trampoline(handle, handle->state, state_size);
-            }
+            // Always use constant-time trampoline for timing attack mitigation
+            ece_apply_trampoline_ct(handle, handle->state, state_size);
         }
     }
     
