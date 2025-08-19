@@ -148,6 +148,53 @@ conformance: $(BUILD_DIR) third_party_blake3
 	@./$(BUILD_DIR)/charm_stream > conformance/nist/reports/stream_$(shell date +%Y%m%d_%H%M%S).json || true
 	@echo "Conformance test reports saved to conformance/nist/reports/"
 
+# Extended CHARM Algorithm Testing Suite
+extended_tests: $(BUILD_DIR)
+	@echo "Building extended CHARM algorithm test suite..."
+	@mkdir -p conformance/nist/reports
+	g++ -Wall -Wextra -std=c++11 -O3 -Ialgorithm/include -o $(BUILD_DIR)/charm_extended_kat \
+		conformance/nist/runner/charm_extended_kat.cpp algorithm/src/charm_lib.c -lm
+	g++ -Wall -Wextra -std=c++11 -O3 -Ialgorithm/include -o $(BUILD_DIR)/charm_avalanche \
+		conformance/nist/runner/charm_avalanche.cpp algorithm/src/charm_lib.c -lm
+	g++ -Wall -Wextra -std=c++11 -O3 -Ialgorithm/include -o $(BUILD_DIR)/charm_sidechannel \
+		conformance/nist/runner/charm_sidechannel.cpp algorithm/src/charm_lib.c -lm
+	g++ -Wall -Wextra -std=c++11 -O3 -Ialgorithm/include -o $(BUILD_DIR)/charm_acvp \
+		conformance/nist/runner/charm_acvp.cpp algorithm/src/charm_lib.c -lm
+	g++ -Wall -Wextra -std=c++11 -O3 -o $(BUILD_DIR)/charm_comprehensive_test \
+		conformance/nist/runner/charm_comprehensive_test.cpp
+
+# Run comprehensive validation (all tests)
+comprehensive: extended_tests
+	@echo "Running comprehensive CHARM algorithm validation..."
+	@./$(BUILD_DIR)/charm_comprehensive_test > conformance/nist/reports/comprehensive_$(shell date +%Y%m%d_%H%M%S).json
+	@echo "Comprehensive test results saved to conformance/nist/reports/"
+
+# Run security analysis tests
+security_analysis: extended_tests
+	@echo "Running CHARM security analysis..."
+	@echo "=== Avalanche Effect Analysis ==="
+	@timeout 180 ./$(BUILD_DIR)/charm_avalanche > conformance/nist/reports/avalanche_$(shell date +%Y%m%d_%H%M%S).json || echo "Avalanche analysis completed"
+	@echo "=== Side-Channel Resistance Analysis ==="
+	@timeout 300 ./$(BUILD_DIR)/charm_sidechannel > conformance/nist/reports/sidechannel_$(shell date +%Y%m%d_%H%M%S).json || echo "Side-channel analysis completed"
+	@echo "Security analysis reports saved to conformance/nist/reports/"
+
+# Performance profiling
+performance_profile: extended_tests
+	@echo "Running CHARM performance profiling..."
+	@echo "=== Monte Carlo Performance Test ==="
+	@./$(BUILD_DIR)/charm_mc 10000 > conformance/nist/reports/performance_$(shell date +%Y%m%d_%H%M%S).json
+	@echo "=== Extended KAT Performance Test ==="
+	@timeout 600 ./$(BUILD_DIR)/charm_extended_kat > conformance/nist/reports/extended_kat_$(shell date +%Y%m%d_%H%M%S).json || echo "Extended KAT completed"
+	@echo "Performance profiling reports saved to conformance/nist/reports/"
+
+# ACVP protocol testing
+acvp_test: extended_tests
+	@echo "Running ACVP protocol compatibility tests..."
+	@./$(BUILD_DIR)/charm_acvp register > conformance/nist/reports/acvp_registration.json
+	@./$(BUILD_DIR)/charm_acvp capabilities > conformance/nist/reports/acvp_capabilities.json
+	@./$(BUILD_DIR)/charm_acvp demo > conformance/nist/reports/acvp_demo_vectors.json
+	@echo "ACVP test files saved to conformance/nist/reports/"
+
 conformance-quick:
 	@echo "Running quick conformance validation..."
 	@mkdir -p conformance/nist/reports
@@ -184,6 +231,11 @@ help:
 	@echo "  charm_opt - Build optimized implementation (SIMD enabled)"
 	@echo "  conformance - Build and run NIST-style conformance tests"
 	@echo "  conformance-quick - Run quick conformance validation"
+	@echo "  extended_tests - Build extended CHARM algorithm test suite"
+	@echo "  comprehensive - Run comprehensive validation (all tests)"
+	@echo "  security_analysis - Run security analysis (avalanche & side-channel)"
+	@echo "  performance_profile - Run performance profiling tests"
+	@echo "  acvp_test - Run ACVP protocol compatibility tests"
 	@echo "  third_party_blake3 - Build BLAKE3 library for benchmarking"
 	@echo "  enhanced  - Build enhanced comprehensive benchmark"
 	@echo "  small     - Build small inputs benchmark (64B, 256B, 1KB)"
@@ -192,4 +244,4 @@ help:
 	@echo "  docs      - Generate/show documentation"
 	@echo "  help      - Show this help message"
 
-.PHONY: all core full clean test benchmark docs help
+.PHONY: all core full clean test benchmark docs help extended_tests comprehensive security_analysis performance_profile acvp_test
