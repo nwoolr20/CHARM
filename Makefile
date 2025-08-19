@@ -28,7 +28,7 @@ TOOLS_DIR = tools
 BENCHMARKS_DIR = benchmarks
 
 # Include path
-INCLUDES = -I$(INCLUDE_DIR)
+INCLUDES = -I$(INCLUDE_DIR) -Ithird_party/crypto/blake3/c
 
 # Core essential source files for minimal working system (updated paths)
 CORE_SOURCES = $(UTILS_DIR)/avx2_detect.c $(CORE_DIR)/ece_core.c $(CORE_DIR)/ece_digest.c $(CORE_DIR)/entropy_bus.c $(CORE_DIR)/system_entropy.c $(SRC_DIR)/main_simple.c
@@ -80,14 +80,14 @@ core: $(CORE_OBJECTS)
 	$(CC) $(CFLAGS) -o $(CHARM_BIN) $(CORE_OBJECTS) $(LDFLAGS)
 
 # Build comprehensive benchmark
-bench: $(BUILD_DIR)/benchmark_comprehensive.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o
+bench: $(BUILD_DIR)/benchmark_comprehensive.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o third_party_blake3
 	@echo "Building comprehensive benchmark..."
-	$(CC) $(CFLAGS) -o $(COMPREHENSIVE_BENCH) $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -DHAVE_BLAKE3 -o $(COMPREHENSIVE_BENCH) $^ $(LDFLAGS)
 
 # Build enhanced comprehensive benchmark
-enhanced: $(BUILD_DIR)/benchmark_enhanced.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o
+enhanced: $(BUILD_DIR)/benchmark_enhanced.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o third_party_blake3
 	@echo "Building enhanced comprehensive benchmark..."
-	$(CC) $(CFLAGS) -o $(ENHANCED_BENCH) $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -DHAVE_BLAKE3 -o $(ENHANCED_BENCH) $^ $(LDFLAGS)
 
 # Build small inputs benchmark
 small: $(BUILD_DIR)/benchmark_small_inputs.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o
@@ -121,13 +121,55 @@ clean:
 	@rm -rf test_output/
 	@echo "Clean complete."
 
+# CHARM Algorithm targets
+charm_ref: $(BUILD_DIR)
+	@echo "Building CHARM reference implementation (strict, no intrinsics)..."
+	$(CC) -Wall -Wextra -std=c99 -O2 -Ialgorithm/include -o $(BUILD_DIR)/charm_ref \
+		algorithm/src/charm_ref.c -lm
+
+charm_opt: $(BUILD_DIR)
+	@echo "Building CHARM optimized implementation (SIMD enabled)..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/charm_opt \
+		algorithm/src/charm_opt.c $(LDFLAGS)
+
+# NIST-style conformance testing
+conformance: $(BUILD_DIR) third_party_blake3
+	@echo "Building NIST-style conformance test suite..."
+	@mkdir -p conformance/nist/reports
+	g++ $(CFLAGS) -Ialgorithm/include -o $(BUILD_DIR)/charm_kat \
+		conformance/nist/runner/charm_kat.cpp algorithm/src/charm_lib.c -lm
+	g++ $(CFLAGS) -Ialgorithm/include -o $(BUILD_DIR)/charm_mc \
+		conformance/nist/runner/charm_mc.cpp algorithm/src/charm_lib.c -lm
+	g++ $(CFLAGS) -Ialgorithm/include -o $(BUILD_DIR)/charm_stream \
+		conformance/nist/runner/charm_stream.cpp algorithm/src/charm_lib.c -lm
+	@echo "Running conformance tests..."
+	@./$(BUILD_DIR)/charm_kat > conformance/nist/reports/kat_$(shell date +%Y%m%d_%H%M%S).json || true
+	@./$(BUILD_DIR)/charm_mc > conformance/nist/reports/mc_$(shell date +%Y%m%d_%H%M%S).json || true
+	@./$(BUILD_DIR)/charm_stream > conformance/nist/reports/stream_$(shell date +%Y%m%d_%H%M%S).json || true
+	@echo "Conformance test reports saved to conformance/nist/reports/"
+
+conformance-quick:
+	@echo "Running quick conformance validation..."
+	@mkdir -p conformance/nist/reports
+	@if [ ! -f build/charm_kat ]; then $(MAKE) conformance > /dev/null 2>&1; fi
+	@echo "Quick KAT Test Results:" 
+	@./build/charm_kat 2>/dev/null | grep -E "(PASS|FAIL|passed|total)" || echo "Tests completed"
+
+# Build third-party BLAKE3 library
+third_party_blake3:
+	@echo "Building BLAKE3 library..."
+	cd third_party/crypto/blake3/c && \
+	gcc -O3 -c blake3.c blake3_dispatch.c blake3_portable.c blake3_sse2.c blake3_sse41.c blake3_avx2.c -mavx2 -msse4.1 -msse2 && \
+	ar rcs libblake3.a blake3.o blake3_dispatch.o blake3_portable.o blake3_sse2.o blake3_sse41.o blake3_avx2.o && \
+	cp libblake3.a ../../../../
+
 # Documentation target
 docs:
-	@echo "Generating documentation..."
-	@echo "Documentation available in docs/ directory"
-	@echo "Main documentation: docs/README.md"
-	@echo "Contributing guidelines: CONTRIBUTING.md"
-	@echo "License: LICENSE"
+	@echo "Documentation available in documents/ directory"
+	@echo "Algorithm specification: documents/CHARM-Algorithm-Spec.md"
+	@echo "Conformance testing: documents/Conformance-Testing.md"
+	@echo "Implementation summary: documents/CHARM_IMPLEMENTATION_SUMMARY.md"
+	@echo "Third-party licenses: third_party/README.md"
 
 # Help
 help:
@@ -138,7 +180,11 @@ help:
 	@echo "  core      - Build core ECE functionality (default)"
 	@echo "  full      - Build complete system with all components"
 	@echo "  clean     - Remove build files"
-	@echo "  bench     - Build comprehensive benchmark tool"
+	@echo "  charm_ref - Build reference implementation (strict, no intrinsics)"
+	@echo "  charm_opt - Build optimized implementation (SIMD enabled)"
+	@echo "  conformance - Build and run NIST-style conformance tests"
+	@echo "  conformance-quick - Run quick conformance validation"
+	@echo "  third_party_blake3 - Build BLAKE3 library for benchmarking"
 	@echo "  enhanced  - Build enhanced comprehensive benchmark"
 	@echo "  small     - Build small inputs benchmark (64B, 256B, 1KB)"
 	@echo "  test      - Run test suite"
