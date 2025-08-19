@@ -526,6 +526,7 @@ ece_status_t ece_collapse(const uint8_t* data, size_t data_size,
     config.use_trampoline = true;
     config.use_avalanche = true;
     config.entropy_quality = 0.7;
+    config.constant_time = true;  // Enable constant-time by default for timing attack mitigation
     
     // Initialize context
     ece_handle_t handle = ece_init(&config);

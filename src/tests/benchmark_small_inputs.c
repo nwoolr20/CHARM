@@ -57,7 +57,7 @@ static int benchmark_charm_small(const uint8_t* data, size_t size, benchmark_res
         .use_trampoline = false,       // Skip all optional features
         .use_avalanche = false,        // Skip all optional features
         .entropy_quality = 0.1,        // Minimum quality for maximum speed
-        .constant_time = false         // Performance mode
+        .constant_time = true          // Use constant-time by default for security
     };
     
     // Warmup runs
