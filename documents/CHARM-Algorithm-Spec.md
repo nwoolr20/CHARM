@@ -6,7 +6,7 @@
 
 ## Abstract
 
-CHARM is a linear streaming cryptographic hash function designed with entropy-native principles. This document provides the complete, frozen specification for CHARM-n where n ∈ {256, 384, 512}, enabling independent, bit-for-bit compatible implementations.
+CHARM is a non-linear, entropy-native streaming cryptographic hash function. Its structure is sequential (not tree-based), maintaining a single evolving state across message absorption, while its transformations employ ARX mixing, adaptive entropy scheduling, and collapse functions to ensure strong non-linearity and diffusion. This document provides the complete, frozen specification for CHARM-n where n ∈ {256, 384, 512}, enabling independent, bit-for-bit compatible implementations.
 
 ## 1. Algorithm Identity & Domain
 
@@ -31,7 +31,7 @@ Unkeyed cryptographic hash function with optional keyed mode for MAC/KDF applica
 
 ### 2.1 Mode of Operation
 
-**CHARM operates as a single-state, linear streaming hash. It does not employ tree hashing, Merkle trees, or any hierarchical reduction mode. Parallelism is achieved within the round function via SIMD and pipelining; digest is invariant to chunking.**
+**CHARM operates as a single-state, sequential streaming hash with non-linear transformations. It does not employ tree hashing, Merkle trees, or any hierarchical reduction mode. The processing structure is sequential rather than tree-based, while round functions employ ARX operations (Add, Rotate, XOR), adaptive entropy scheduling, and collapse functions for cryptographic non-linearity. Parallelism is achieved within the round function via SIMD and pipelining; digest is invariant to chunking.**
 
 ### 2.2 Processing Model
 ```
@@ -363,6 +363,6 @@ CHARM-512: fedcba0987654321098765432109876543210987654321098765432109876543fedcb
 
 ## 10. Conclusion
 
-CHARM represents a new approach to cryptographic hash design, combining entropy-native principles with linear streaming operation. This specification provides a complete, frozen definition enabling independent implementation while maintaining the security and performance benefits of the entropy-aware design.
+CHARM represents a new approach to cryptographic hash design, combining entropy-native principles with sequential streaming operation and non-linear transformations. This specification provides a complete, frozen definition enabling independent implementation while maintaining the security and performance benefits of the entropy-aware design.
 
-The algorithm is positioned as a modern alternative to SHA-2/SHA-3, offering competitive performance through adaptive processing while maintaining the simplicity and auditability of a linear design.
+The algorithm is positioned as a modern alternative to SHA-2/SHA-3, offering competitive performance through adaptive processing while maintaining the simplicity and auditability of a sequential processing structure with cryptographically strong non-linear round functions.
