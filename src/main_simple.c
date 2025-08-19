@@ -107,7 +107,8 @@ static int hash_data(const uint8_t* data, size_t size, uint8_t* digest) {
         .use_ternary_logic = true,
         .use_trampoline = true,
         .use_avalanche = true,
-        .entropy_quality = 0.8
+        .entropy_quality = 0.8,
+        .constant_time = false  // Default to performance mode
     };
     
     ece_handle_t handle = ece_init(&config);

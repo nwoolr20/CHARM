@@ -59,7 +59,8 @@ static int benchmark_charm(const uint8_t* data, size_t size, benchmark_result_t*
         .use_ternary_logic = false,                  // Always skip ternary for speed
         .use_trampoline = false,                     // Always skip trampoline for speed  
         .use_avalanche = false,                      // Skip avalanche for small inputs
-        .entropy_quality = 0.3                      // Minimal quality for maximum speed
+        .entropy_quality = 0.3,                     // Minimal quality for maximum speed
+        .constant_time = false                      // Performance mode for benchmarks
     };
     
     // Standard approach - optimize configuration instead of internal access
@@ -237,7 +238,8 @@ static void run_digest_comparison(void) {
             .use_ternary_logic = true,
             .use_trampoline = true,
             .use_avalanche = true,
-            .entropy_quality = 0.8
+            .entropy_quality = 0.8,
+            .constant_time = false  // Performance mode for benchmarks
         };
         
         ece_handle_t handle = ece_init(&config);

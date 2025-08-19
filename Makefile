@@ -48,6 +48,7 @@ CHARM_BIN = $(BUILD_DIR)/charm
 BENCH_BIN = $(BUILD_DIR)/bench_digest
 COMPREHENSIVE_BENCH = $(BUILD_DIR)/benchmark_comprehensive
 ENHANCED_BENCH = $(BUILD_DIR)/benchmark_enhanced
+SMALL_INPUTS_BENCH = $(BUILD_DIR)/benchmark_small_inputs
 
 # Default target - build core functionality
 all: core
@@ -88,6 +89,11 @@ enhanced: $(BUILD_DIR)/benchmark_enhanced.o $(BUILD_DIR)/avx2_detect.o $(BUILD_D
 	@echo "Building enhanced comprehensive benchmark..."
 	$(CC) $(CFLAGS) -o $(ENHANCED_BENCH) $^ $(LDFLAGS)
 
+# Build small inputs benchmark
+small: $(BUILD_DIR)/benchmark_small_inputs.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o
+	@echo "Building small inputs benchmark..."
+	$(CC) $(CFLAGS) -o $(SMALL_INPUTS_BENCH) $^ $(LDFLAGS)
+
 # Build full system
 full: $(LIB_STATIC) $(CHARM_BIN) $(BENCH_BIN)
 
@@ -111,7 +117,7 @@ benchmark: bench
 # Clean build files
 clean:
 	@echo "Cleaning build files..."
-	@rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/*.a $(BUILD_DIR)/charm $(BUILD_DIR)/bench_digest $(BUILD_DIR)/benchmark_comprehensive $(BUILD_DIR)/benchmark_enhanced
+	@rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/*.a $(BUILD_DIR)/charm $(BUILD_DIR)/bench_digest $(BUILD_DIR)/benchmark_comprehensive $(BUILD_DIR)/benchmark_enhanced $(BUILD_DIR)/benchmark_small_inputs
 	@rm -rf test_output/
 	@echo "Clean complete."
 
@@ -134,6 +140,7 @@ help:
 	@echo "  clean     - Remove build files"
 	@echo "  bench     - Build comprehensive benchmark tool"
 	@echo "  enhanced  - Build enhanced comprehensive benchmark"
+	@echo "  small     - Build small inputs benchmark (64B, 256B, 1KB)"
 	@echo "  test      - Run test suite"
 	@echo "  benchmark - Run performance benchmarks"
 	@echo "  docs      - Generate/show documentation"
