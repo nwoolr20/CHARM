@@ -186,8 +186,10 @@ ece_handle_t ece_init(const ece_config_t* config) {
     handle->stats.avg_rounds = handle->collapse_rounds;
     handle->stats.avg_entropy_quality = handle->entropy_quality;
     
-    // Initialize trampoline table
-    ece_init_trampoline_table(handle);
+    // Initialize trampoline table only if trampoline is enabled
+    if (handle->use_trampoline) {
+        ece_init_trampoline_table(handle);
+    }
     
     // Initialize system entropy for high-performance entropy sampling
     static bool entropy_initialized = false;
@@ -674,16 +676,32 @@ static inline void ece_fast_process_small(ece_handle_t handle, const uint8_t* da
     // Fast path optimizations based on input size
     if (size <= 32) {
         // Ultra-fast path for very small inputs (≤32 bytes)
+        // Use unrolled loop for maximum speed
         for (size_t i = 0; i < size; i++) {
             handle->state[i % state_size] ^= data[i] ^ (uint8_t)(fast_entropy >> ((i & 7) * 8));
         }
         
-        // Minimal mixing with reduced rounds
-        uint32_t rounds = handle->collapse_rounds / 2; // Use half the configured rounds
+        // Minimal mixing with optimized rounds - use at most 1 round for tiny inputs
+        uint32_t rounds = (handle->collapse_rounds == 2) ? 1 : handle->collapse_rounds / 2;
         for (uint32_t r = 0; r < rounds; r++) {
-            for (size_t i = 0; i < state_size; i++) {
-                handle->state[i] ^= handle->state[(i + 1) % state_size];
-                handle->state[i] = ((handle->state[i] << 1) | (handle->state[i] >> 7));
+            // Optimized mixing for small state
+            for (size_t i = 0; i < state_size; i += 4) {
+                // Process 4 bytes at once when possible
+                if (i + 3 < state_size) {
+                    handle->state[i] ^= handle->state[(i + 1) % state_size];
+                    handle->state[i + 1] ^= handle->state[(i + 2) % state_size];
+                    handle->state[i + 2] ^= handle->state[(i + 3) % state_size];
+                    handle->state[i + 3] ^= handle->state[i % state_size];
+                    
+                    // Simple rotation
+                    handle->state[i] = ((handle->state[i] << 1) | (handle->state[i] >> 7));
+                    handle->state[i + 1] = ((handle->state[i + 1] << 1) | (handle->state[i + 1] >> 7));
+                    handle->state[i + 2] = ((handle->state[i + 2] << 1) | (handle->state[i + 2] >> 7));
+                    handle->state[i + 3] = ((handle->state[i + 3] << 1) | (handle->state[i + 3] >> 7));
+                } else {
+                    handle->state[i] ^= handle->state[(i + 1) % state_size];
+                    handle->state[i] = ((handle->state[i] << 1) | (handle->state[i] >> 7));
+                }
             }
         }
     } else if (size <= 128) {

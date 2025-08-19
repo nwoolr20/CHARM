@@ -62,11 +62,11 @@ charm --debug
 
 Detailed documentation is available in the `docs` directory:
 
-- [System Overview](docs/SYSTEM_OVERVIEW.md)
-- [CAEDS Documentation](docs/CAEDS.md)
-- [CEE Documentation](docs/CEE.md)
-- [ECE Documentation](docs/ECE.md)
-- [Entropy Bus Documentation](docs/entropy_bus.md)
+- [System Overview](SYSTEM_OVERVIEW.md)
+- [CAEDS Documentation](CAEDS.md)
+- [CEE Documentation](CEE.md)
+- [ECE Documentation](ECE.md)
+- [Entropy Bus Documentation](entropy_bus.md)
 
 ## Requirements
 
