@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ACVP SHA-like Test Vector Schema for CHARM",
+  "description": "JSON schema for CHARM algorithm test vectors compatible with ACVP SHA profiles",
+  "type": "object",
+  "properties": {
+    "vsId": {
+      "type": "integer",
+      "description": "Vector set identifier"
+    },
+    "algorithm": {
+      "type": "string",
+      "enum": ["CHARM"],
+      "description": "Algorithm name"
+    },
+    "mode": {
+      "type": "string", 
+      "enum": ["hash", "keyed", "xof"],
+      "description": "Algorithm mode"
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "Algorithm revision"
+    },
+    "testGroups": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/testGroup"
+      },
+      "minItems": 1
+    }
+  },
+  "required": ["vsId", "algorithm", "mode", "revision", "testGroups"],
+  "definitions": {
+    "testGroup": {
+      "type": "object",
+      "properties": {
+        "tgId": {
+          "type": "integer",
+          "description": "Test group identifier"
+        },
+        "variant": {
+          "type": "string",
+          "enum": ["CHARM-256", "CHARM-384", "CHARM-512"],
+          "description": "CHARM variant"
+        },
+        "testType": {
+          "type": "string",
+          "enum": ["AFT", "MCT", "LDT", "VAR"],
+          "description": "Test type: Algorithm Functional Test, Monte Carlo Test, Large Data Test, Variable Length Test"
+        },
+        "tests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/test"
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["tgId", "variant", "testType", "tests"]
+    },
+    "test": {
+      "type": "object",
+      "properties": {
+        "tcId": {
+          "type": "integer",
+          "description": "Test case identifier"
+        },
+        "msg": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]*$",
+          "description": "Input message as hex string"
+        },
+        "len": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Message length in bits"
+        },
+        "md": {
+          "type": "string", 
+          "pattern": "^[0-9A-Fa-f]*$",
+          "description": "Expected message digest as hex string"
+        },
+        "key": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]*$",
+          "description": "Key for keyed mode (optional)"
+        },
+        "customization": {
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]*$", 
+          "description": "Customization string (optional)"
+        }
+      },
+      "required": ["tcId", "msg", "len", "md"]
+    }
+  }
+}
