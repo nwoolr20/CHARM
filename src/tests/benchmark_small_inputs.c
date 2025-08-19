@@ -12,11 +12,13 @@
 #include <stdint.h>
 #include <time.h>
 #include <openssl/sha.h>
+#include "blake3.h"
 
 #include "ece_core.h"
 
 #define NUM_ITERATIONS 1000
 #define NUM_WARMUP 100
+#define BLAKE3_AVAILABLE 1
 
 typedef struct {
     const char* name;
@@ -125,6 +127,42 @@ static int benchmark_sha256_small(const uint8_t* data, size_t size, benchmark_re
     return 0;
 }
 
+// BLAKE3 benchmark for comparison
+static int benchmark_blake3_small(const uint8_t* data, size_t size, benchmark_result_t* result) {
+    #if BLAKE3_AVAILABLE
+    blake3_hasher hasher;
+    
+    // Warmup runs
+    for (int iter = 0; iter < NUM_WARMUP; iter++) {
+        blake3_hasher_init(&hasher);
+        blake3_hasher_update(&hasher, data, size);
+        blake3_hasher_finalize(&hasher, result->digest, 32);
+    }
+    
+    // Actual benchmark with cycle counting
+    uint64_t start_cycles = rdtsc();
+    double start_time = get_time_ms();
+    
+    for (int iter = 0; iter < NUM_ITERATIONS; iter++) {
+        blake3_hasher_init(&hasher);
+        blake3_hasher_update(&hasher, data, size);
+        blake3_hasher_finalize(&hasher, result->digest, 32);
+    }
+    
+    uint64_t end_cycles = rdtsc();
+    double end_time = get_time_ms();
+    
+    result->time_ms = (end_time - start_time) / NUM_ITERATIONS;
+    result->throughput_mbps = (size / (1024.0 * 1024.0)) / (result->time_ms / 1000.0);
+    result->cycles_per_byte = (double)(end_cycles - start_cycles) / (NUM_ITERATIONS * size);
+    result->name = "BLAKE3";
+    
+    return 0;
+    #else
+    return -1; // BLAKE3 not available
+    #endif
+}
+
 static void print_results_header(void) {
     printf("Small Input Performance Analysis\n");
     printf("================================\n\n");
@@ -157,7 +195,7 @@ static void benchmark_size(size_t size) {
     
     generate_test_data(data, size, 42);
     
-    benchmark_result_t charm_result, sha256_result;
+    benchmark_result_t charm_result, sha256_result, blake3_result;
     
     // Test CHARM optimized
     if (benchmark_charm_small(data, size, &charm_result) == 0) {
@@ -174,6 +212,17 @@ static void benchmark_size(size_t size) {
             
             print_result(size, &sha256_result);
             printf("Reference\n");
+        }
+        
+        // Test BLAKE3
+        if (benchmark_blake3_small(data, size, &blake3_result) == 0) {
+            print_result(size, &blake3_result);
+            double performance_ratio = charm_result.throughput_mbps / blake3_result.throughput_mbps;
+            if (performance_ratio >= 1.0) {
+                printf("✅ %.1f%% vs BLAKE3\n", (performance_ratio - 1.0) * 100);
+            } else {
+                printf("🔴 %.1f%% vs BLAKE3\n", (1.0 - performance_ratio) * 100);
+            }
         }
     }
     

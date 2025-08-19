@@ -21,8 +21,8 @@
 #include "ece_core.h"
 
 // BLAKE3 - conditional include
-// #include "blake3.h"
-#define BLAKE3_AVAILABLE 0
+#include "blake3.h"
+#define BLAKE3_AVAILABLE 1
 
 // Test parameters
 #define MIN_SIZE 64
@@ -267,7 +267,24 @@ static void run_digest_comparison(void) {
         for (int j = 0; j < 32; j++) {
             printf("%02x", sha256_digest[j]);
         }
-        printf("\n\n");
+        printf("\n");
+
+        // BLAKE3 digest
+        #if BLAKE3_AVAILABLE
+        uint8_t blake3_digest[32];
+        blake3_hasher blake3_hasher_ctx;
+        blake3_hasher_init(&blake3_hasher_ctx);
+        blake3_hasher_update(&blake3_hasher_ctx, input, len);
+        blake3_hasher_finalize(&blake3_hasher_ctx, blake3_digest, 32);
+        
+        printf("BLAKE3:  ");
+        for (int j = 0; j < 32; j++) {
+            printf("%02x", blake3_digest[j]);
+        }
+        printf("\n");
+        #endif
+
+        printf("\n");
     }
 }
 

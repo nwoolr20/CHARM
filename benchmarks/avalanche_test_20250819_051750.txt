@@ -1,3 +1,0 @@
-Input A: 'test' -> 2dfe20c9819fb10918f91b90819fb10918f91b90819fb10918f91b90819fb109
-Input B: 'tesT' -> e55d79bf09bd287e90db82e709bd287e90db82e709bd287e90db82e709bd287e
-Differing bits: 114

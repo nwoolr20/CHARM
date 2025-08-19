@@ -1,1 +1,0 @@
-Unique byte values in 100 random digests: 256 (max 256)

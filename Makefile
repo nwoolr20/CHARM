@@ -15,7 +15,7 @@ CFLAGS = -Wall -Wextra -std=c99 -O3 -flto -ffast-math -funroll-loops \
 # to ensure compatibility. On AVX512-capable systems, manually add -mavx512f
 
 # Linker flags
-LDFLAGS = -pthread -lm -lssl -lcrypto -flto
+LDFLAGS = -pthread -lm -lssl -lcrypto -flto -L. -lblake3
 
 # Directories
 SRC_DIR = src
