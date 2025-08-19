@@ -58,3 +58,9 @@ perf.data*
 blake3/
 lib/
 external/
+
+# Third party built libraries
+libblake3.a
+
+# Conformance test reports (timestamped)
+conformance/nist/reports/*.json
