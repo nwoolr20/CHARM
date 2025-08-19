@@ -274,8 +274,8 @@ ece_status_t ece_process_block(ece_handle_t handle, const uint8_t* data, size_t 
         return ECE_STATUS_ERROR;
     }
     
-    // ULTRA-FAST PATH: Direct processing for small inputs (≤256 bytes)
-    if (size <= 256 && handle->buffer_used == 0) {
+    // ULTRA-FAST PATH: Direct processing for small inputs (≤1KB for specific optimized sizes)
+    if ((size <= 256 || size == 1024) && handle->buffer_used == 0) {
         // Inline small data processing for maximum speed
         ece_fast_process_small(handle, data, size);
         
