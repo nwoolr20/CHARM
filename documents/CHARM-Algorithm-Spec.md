@@ -6,7 +6,7 @@
 
 ## Abstract
 
-CHARM (Chaotic Hierarchical Adaptive Resilient Mechanism) is a linear streaming cryptographic hash function designed with entropy-native principles. This document provides the complete, frozen specification for CHARM-n where n ∈ {256, 384, 512}, enabling independent, bit-for-bit compatible implementations.
+CHARM is a linear streaming cryptographic hash function designed with entropy-native principles. This document provides the complete, frozen specification for CHARM-n where n ∈ {256, 384, 512}, enabling independent, bit-for-bit compatible implementations.
 
 ## 1. Algorithm Identity & Domain
 
