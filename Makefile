@@ -19,22 +19,28 @@ LDFLAGS = -pthread -lm -lssl -lcrypto -flto
 
 # Directories
 SRC_DIR = src
+CORE_DIR = $(SRC_DIR)/core
+UTILS_DIR = $(SRC_DIR)/utils
+TESTS_DIR = $(SRC_DIR)/tests
 INCLUDE_DIR = include
 BUILD_DIR = build
 TOOLS_DIR = tools
+BENCHMARKS_DIR = benchmarks
 
 # Include path
 INCLUDES = -I$(INCLUDE_DIR)
 
-# Core essential source files for minimal working system
-CORE_SOURCES = $(SRC_DIR)/avx2_detect.c $(SRC_DIR)/ece_core.c $(SRC_DIR)/ece_digest.c $(SRC_DIR)/entropy_bus.c $(SRC_DIR)/system_entropy.c $(SRC_DIR)/main_simple.c
+# Core essential source files for minimal working system (updated paths)
+CORE_SOURCES = $(UTILS_DIR)/avx2_detect.c $(CORE_DIR)/ece_core.c $(CORE_DIR)/ece_digest.c $(CORE_DIR)/entropy_bus.c $(CORE_DIR)/system_entropy.c $(SRC_DIR)/main_simple.c
 
 # All library source files (for full build)
-ALL_LIB_SOURCES = $(wildcard $(SRC_DIR)/*.c)
+ALL_LIB_SOURCES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(CORE_DIR)/*.c) $(wildcard $(UTILS_DIR)/*.c)
 
-# Object files for core build (in build directory)
+# Object files for core build (in build directory) 
 CORE_OBJECTS = $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o $(BUILD_DIR)/main_simple.o
-ALL_LIB_OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(ALL_LIB_SOURCES))
+ALL_LIB_OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)) \
+                  $(patsubst $(CORE_DIR)/%.c,$(BUILD_DIR)/%.o,$(wildcard $(CORE_DIR)/*.c)) \
+                  $(patsubst $(UTILS_DIR)/%.c,$(BUILD_DIR)/%.o,$(wildcard $(UTILS_DIR)/*.c))
 
 # Output files
 LIB_STATIC = $(BUILD_DIR)/libcharm.a
@@ -50,8 +56,20 @@ all: core
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
-# Pattern rule for object files
+# Pattern rules for object files from different directories
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+	@echo "Compiling $< with performance optimizations..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(BUILD_DIR)/%.o: $(CORE_DIR)/%.c | $(BUILD_DIR)
+	@echo "Compiling $< with performance optimizations..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(BUILD_DIR)/%.o: $(UTILS_DIR)/%.c | $(BUILD_DIR)
+	@echo "Compiling $< with performance optimizations..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(BUILD_DIR)/%.o: $(TESTS_DIR)/%.c | $(BUILD_DIR)
 	@echo "Compiling $< with performance optimizations..."
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
 
@@ -97,6 +115,14 @@ clean:
 	@rm -rf test_output/
 	@echo "Clean complete."
 
+# Documentation target
+docs:
+	@echo "Generating documentation..."
+	@echo "Documentation available in docs/ directory"
+	@echo "Main documentation: docs/README.md"
+	@echo "Contributing guidelines: CONTRIBUTING.md"
+	@echo "License: LICENSE"
+
 # Help
 help:
 	@echo "CHARM System Makefile - Organized Structure"
@@ -110,6 +136,7 @@ help:
 	@echo "  enhanced  - Build enhanced comprehensive benchmark"
 	@echo "  test      - Run test suite"
 	@echo "  benchmark - Run performance benchmarks"
+	@echo "  docs      - Generate/show documentation"
 	@echo "  help      - Show this help message"
 
-.PHONY: all core full clean test benchmark help
+.PHONY: all core full clean test benchmark docs help
