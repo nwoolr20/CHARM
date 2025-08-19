@@ -33,7 +33,7 @@ echo
 echo -e "${YELLOW}Test 1: Basic Functionality${NC}"
 echo "Testing basic CHARM hashing functionality..."
 
-echo "Hello CHARM!" | ./charm > "$TEST_DIR/basic_test_$TIMESTAMP.txt" 2>&1
+echo "Hello CHARM!" | ./build/charm > "$TEST_DIR/basic_test_$TIMESTAMP.txt" 2>&1
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ Basic hashing test passed${NC}"
 else
@@ -44,8 +44,8 @@ fi
 echo -e "${YELLOW}Test 2: Digest Consistency${NC}"
 echo "Testing that identical inputs produce identical digests..."
 
-DIGEST1=$(echo "test string" | ./charm | cut -d' ' -f1)
-DIGEST2=$(echo "test string" | ./charm | cut -d' ' -f1)
+DIGEST1=$(echo "test string" | ./build/charm | cut -d' ' -f1)
+DIGEST2=$(echo "test string" | ./build/charm | cut -d' ' -f1)
 
 echo "Digest 1: $DIGEST1" >> "$TEST_DIR/consistency_test_$TIMESTAMP.txt"
 echo "Digest 2: $DIGEST2" >> "$TEST_DIR/consistency_test_$TIMESTAMP.txt"
@@ -60,8 +60,8 @@ fi
 echo -e "${YELLOW}Test 3: Avalanche Effect${NC}"
 echo "Testing avalanche effect (small input change causes large output change)..."
 
-DIGEST_A=$(echo "test" | ./charm | cut -d' ' -f1)
-DIGEST_B=$(echo "tesT" | ./charm | cut -d' ' -f1)
+DIGEST_A=$(echo "test" | ./build/charm | cut -d' ' -f1)
+DIGEST_B=$(echo "tesT" | ./build/charm | cut -d' ' -f1)
 
 echo "Input A: 'test' -> $DIGEST_A" >> "$TEST_DIR/avalanche_test_$TIMESTAMP.txt"
 echo "Input B: 'tesT' -> $DIGEST_B" >> "$TEST_DIR/avalanche_test_$TIMESTAMP.txt"
@@ -91,7 +91,7 @@ fi
 echo -e "${YELLOW}Test 4: Performance Benchmark${NC}"
 echo "Running comprehensive performance benchmark..."
 
-./benchmark_comprehensive > "$TEST_DIR/performance_benchmark_$TIMESTAMP.txt" 2>&1
+./build/benchmark_comprehensive > "$TEST_DIR/performance_benchmark_$TIMESTAMP.txt" 2>&1
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ Performance benchmark completed${NC}"
     # Extract key performance metrics
@@ -107,7 +107,7 @@ fi
 echo -e "${YELLOW}Test 5: Digest Comparison${NC}"
 echo "Generating digest comparison report..."
 
-./benchmark_comprehensive --compare > "$TEST_DIR/digest_comparison_$TIMESTAMP.txt" 2>&1
+./build/benchmark_comprehensive --compare > "$TEST_DIR/digest_comparison_$TIMESTAMP.txt" 2>&1
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ Digest comparison completed${NC}"
 else
@@ -120,7 +120,7 @@ echo "Analyzing output entropy quality..."
 
 # Generate multiple random digests and analyze
 for i in {1..100}; do
-    echo "Random input $i: $(openssl rand -hex 32)" | ./charm
+    echo "Random input $i: $(openssl rand -hex 32)" | ./build/charm
 done > "$TEST_DIR/entropy_analysis_input_$TIMESTAMP.txt" 2>&1
 
 # Extract just the digests
@@ -145,7 +145,7 @@ dd if=/dev/urandom of="$TEST_DIR/large_file_1mb.bin" bs=1M count=1 2>/dev/null
 
 # Hash the large file
 start_time=$(date +%s.%N)
-./charm -i "$TEST_DIR/large_file_1mb.bin" > "$TEST_DIR/large_file_result_$TIMESTAMP.txt" 2>&1
+./build/charm -i "$TEST_DIR/large_file_1mb.bin" > "$TEST_DIR/large_file_result_$TIMESTAMP.txt" 2>&1
 end_time=$(date +%s.%N)
 duration=$(echo "$end_time - $start_time" | bc 2>/dev/null || echo "unknown")
 
@@ -165,7 +165,7 @@ Generated: $(date)
 ## System Information
 - Platform: $(uname -a)
 - Compiler: $(gcc --version | head -1)
-- CHARM Version: $(./charm --help | head -1)
+- CHARM Version: $(./build/charm --help | head -1)
 
 ## Test Results Summary
 

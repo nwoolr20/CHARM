@@ -9,19 +9,19 @@ CHARM:   0000000000000000000000000000000000000000000000000000000000000000
 SHA-256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 
 Input: "a" (1 bytes)
-CHARM:   09345007a9ad7a791e81fdadd9441b963b4f8f819af1ead9e5c51ef289d9ad88
+CHARM:   adc1187fda1c81f7adc1187fda1c81f7adc1187fda1c81f7adc1187fda1c81f7
 SHA-256: ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb
 
 Input: "abc" (3 bytes)
-CHARM:   dd38afb4bfcd9c1c1d349eb6819271c583ad51c89ba54d18d3ca3807f6ec16c5
+CHARM:   f4b1baaaaaaaffaaaaaaffaaaaaaffaaaaaaffaaaaaaffaaaaaaffaaaaaaffaa
 SHA-256: ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
 
 Input: "The quick brown fox jumps over the lazy dog" (43 bytes)
-CHARM:   1224ef8632bfe8a6f54a5148bccb57d7e6859f73a3683a772dc58abd8c88bb4e
+CHARM:   e4447b38d820efc292377550d50876bfcbc385464bb399e77a70a9bce6256599
 SHA-256: d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592
 
 Input: "CHARM is a revolutionary entropy-native hashing system" (54 bytes)
-CHARM:   7e2fd5cd14de0e386e037b08fe09e6e9009dfba0ab30c04bb51639708a81aa38
+CHARM:   f02893eacdb98f37fce5ba47d14a4d5ed11bf88e6b73519e513a5798d5f22ce4
 SHA-256: 4089b0f24e58900f4e86bddd6ec8dd5f1716b711c6243e834fb69069b9aa42c8
 
 Benchmark complete!

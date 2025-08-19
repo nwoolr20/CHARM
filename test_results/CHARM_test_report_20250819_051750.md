@@ -1,8 +1,8 @@
 # CHARM Test and Benchmark Report
-Generated: Wed Aug 13 16:23:35 UTC 2025
+Generated: Tue Aug 19 05:17:52 UTC 2025
 
 ## System Information
-- Platform: Linux pkrvmsl9tci6h6u 6.11.0-1018-azure #18~24.04.1-Ubuntu SMP Sat Jun 28 04:46:03 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
+- Platform: Linux pkrvmubgrv54qmi 6.11.0-1018-azure #18~24.04.1-Ubuntu SMP Sat Jun 28 04:46:03 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
 - Compiler: gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0
 - CHARM Version: CHARM - Chaotic Hierarchical Adaptive Resilient Mechanism
 
@@ -26,7 +26,7 @@ Single bit changes in input cause significant changes in output (>25% bits diffe
 Output demonstrates high entropy with 256/256 unique byte patterns.
 
 ### Large File Handling: ✓ PASSED
-Successfully processes files up to 1MB in .747805869s.
+Successfully processes files up to 1MB in .003322425s.
 
 ## Technical Features Demonstrated
 
