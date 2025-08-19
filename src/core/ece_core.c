@@ -194,8 +194,15 @@ ece_handle_t ece_init(const ece_config_t* config) {
                               config->entropy_quality : 0.7;
     // Note: constant_time is now always enabled for timing attack mitigation
     
-    // Initialize state
-    memset(handle->state, 0, ECE_STATE_SIZE);
+    // Initialize state with proper IV to prevent all-zero output
+    // Use constants derived from mathematical constants for initial entropy
+    const uint8_t initial_state[ECE_STATE_SIZE] = {
+        0x6a, 0x09, 0xe6, 0x67, 0xf3, 0xbc, 0xc9, 0x08,  // sqrt(2) * 2^32
+        0xbb, 0x67, 0xae, 0x85, 0x84, 0xca, 0xa7, 0x3b,  // sqrt(3) * 2^32
+        0x3c, 0x6e, 0xf3, 0x72, 0xfe, 0x94, 0xf8, 0x2b,  // sqrt(5) * 2^32
+        0xa5, 0x4f, 0xf5, 0x3a, 0x5f, 0x1d, 0x36, 0xf1   // sqrt(7) * 2^32
+    };
+    memcpy(handle->state, initial_state, ECE_STATE_SIZE);
     memset(handle->buffer, 0, ECE_BLOCK_SIZE);
     handle->buffer_used = 0;
     handle->finalized = false;
@@ -248,8 +255,14 @@ ece_status_t ece_reset(ece_handle_t handle) {
         return ECE_STATUS_INVALID_ARG;
     }
     
-    // Reset state
-    memset(handle->state, 0, ECE_STATE_SIZE);
+    // Reset state with proper IV
+    const uint8_t initial_state[ECE_STATE_SIZE] = {
+        0x6a, 0x09, 0xe6, 0x67, 0xf3, 0xbc, 0xc9, 0x08,  // sqrt(2) * 2^32
+        0xbb, 0x67, 0xae, 0x85, 0x84, 0xca, 0xa7, 0x3b,  // sqrt(3) * 2^32
+        0x3c, 0x6e, 0xf3, 0x72, 0xfe, 0x94, 0xf8, 0x2b,  // sqrt(5) * 2^32
+        0xa5, 0x4f, 0xf5, 0x3a, 0x5f, 0x1d, 0x36, 0xf1   // sqrt(7) * 2^32
+    };
+    memcpy(handle->state, initial_state, ECE_STATE_SIZE);
     memset(handle->buffer, 0, ECE_BLOCK_SIZE);
     handle->buffer_used = 0;
     handle->finalized = false;
@@ -266,8 +279,15 @@ ece_status_t ece_reset(ece_handle_t handle) {
  * @return ece_status_t Status code
  */
 ece_status_t ece_process_block(ece_handle_t handle, const uint8_t* data, size_t size) {
-    if (handle == NULL || data == NULL || size == 0) {
+    if (handle == NULL) {
         return ECE_STATUS_INVALID_ARG;
+    }
+    
+    // Allow empty data processing for empty string hashing
+    if (size == 0 || data == NULL) {
+        // For empty input, just update statistics
+        handle->stats.operations_count++;
+        return ECE_STATUS_OK;
     }
     
     if (handle->finalized) {
@@ -375,6 +395,28 @@ ece_status_t ece_finalize(ece_handle_t handle, uint8_t* digest, size_t size) {
     // Apply final avalanche effect if enabled
     if (handle->use_avalanche) {
         ece_apply_avalanche(handle->state, ECE_STATE_SIZE);
+    }
+    
+    // Additional entropy mixing to eliminate patterns in output
+    // Apply final diffusion rounds to ensure proper entropy distribution
+    for (int round = 0; round < 3; round++) {
+        // Cross-quarter mixing to break patterns
+        for (size_t i = 0; i < ECE_STATE_SIZE / 4; i++) {
+            uint8_t temp = handle->state[i];
+            handle->state[i] ^= handle->state[i + ECE_STATE_SIZE/4] ^ 
+                              handle->state[i + ECE_STATE_SIZE/2] ^ 
+                              handle->state[i + 3*ECE_STATE_SIZE/4];
+            handle->state[i + ECE_STATE_SIZE/4] ^= temp ^ handle->state[i + ECE_STATE_SIZE/2];
+            handle->state[i + ECE_STATE_SIZE/2] ^= temp ^ handle->state[i + 3*ECE_STATE_SIZE/4];
+            handle->state[i + 3*ECE_STATE_SIZE/4] ^= temp;
+        }
+        
+        // Additional bit diffusion with rotation
+        for (size_t i = 0; i < ECE_STATE_SIZE; i++) {
+            handle->state[i] ^= handle->state[(i + 7) % ECE_STATE_SIZE];
+            handle->state[i] = (handle->state[i] << (1 + round)) | 
+                              (handle->state[i] >> (8 - (1 + round)));
+        }
     }
     
     // Copy state to digest

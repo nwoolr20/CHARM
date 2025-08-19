@@ -275,11 +275,8 @@ static int process_file(const char* filename) {
         }
     }
     
-    if (data_size == 0) {
-        fprintf(stderr, "Error: No data to process\n");
-        free(data);
-        return -1;
-    }
+    // Allow empty string processing for consistency with cryptographic hash functions
+    // data_size == 0 is valid for empty string hashing
     
     // Hash the data
     uint8_t digest[32];
