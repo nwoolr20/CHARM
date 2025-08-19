@@ -44,6 +44,7 @@ typedef struct {
     bool use_trampoline;         /**< Use trampoline mappings */
     bool use_avalanche;          /**< Use avalanche-fused output */
     double entropy_quality;      /**< Required entropy quality (0.0-1.0) */
+    bool constant_time;          /**< Enable constant-time side-channel resistant mode */
 } ece_config_t;
 
 /**
