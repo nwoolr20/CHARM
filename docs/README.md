@@ -1,15 +1,23 @@
-# CHARM - Chaotic Hierarchical Adaptive Resilient Mechanism
+# CHARM - High-Performance Entropy-Native Cryptographic Framework
 
-CHARM is an advanced, entropy-native cryptographic system designed to provide high-security operations through a modular architecture leveraging chaotic dynamics, entropy field collapse, and nonlinear routing.
+CHARM is a standalone, entropy-native cryptographic framework that functions as both a high-performance hashing system and a dynamic entropy management engine. It leverages chaotic dynamics, adaptive resonance, and entropy-field collapse to maintain optimal stability, unpredictability, and efficiency across a wide range of computational scenarios. CHARM is designed for modern and future security challenges while optimizing performance for inputs of varying sizes.
 
-## System Components
+At its core, CHARM ensures data integrity, cryptographic strength, and adaptive performance, combining concepts from chaos theory and cognitive-inspired entropy management.
 
-CHARM consists of four primary subsystems:
+## Core Modules
 
-1. **CAEDS** - Chaotic Anomaly and Entropy Diagnostic Subsystem
-2. **CEE** - Chaotic Entropy Expansion
-3. **ECE** - Entropy Collapse Engine
-4. **Entropy Bus** - System integration layer
+CHARM consists of three primary subsystems:
+
+1. **CAEDS** - Chaotic Anomaly & Entropy Diagnostic Subsystem  
+   Continuously monitors system entropy, detects irregularities or imbalances, and provides adaptive feedback to maintain stability.
+
+2. **CEE** - Chaotic Entropy Expansion  
+   Generates and amplifies structured entropy to enhance unpredictability, performance, and cryptographic resilience.
+
+3. **ECE** - Entropic Collapse Engine  
+   Stabilizes over-chaotic states by compressing excessive entropy into coherent outputs, ensuring consistent and secure operation.
+
+Together, these modules make CHARM a self-regulating, high-performance hashing framework.
 
 ## Features
 
@@ -24,17 +32,17 @@ CHARM consists of four primary subsystems:
 
 ```bash
 # Clone the repository
-git clone https://github.com/charm-crypto/charm.git
-cd charm
+git clone https://github.com/nwoolr20/CHARM.git
+cd CHARM
 
-# Build the system
-make
+# Build the core system
+make core
 
-# Run tests
-make test
+# Build benchmarks
+make bench
 
-# Install
-sudo make install
+# Run performance benchmarks
+make benchmark
 ```
 
 ## Usage
@@ -77,7 +85,7 @@ Detailed documentation is available in the `docs` directory:
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the CHARM License 2025. See [LICENSE](../LICENSE) for details.
 
 ## Contact
 

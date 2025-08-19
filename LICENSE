@@ -1,21 +1,26 @@
-MIT License
+CHARM License (2025)
 
-Copyright (c) 2025 CHARM Cryptography Team
+Copyright (c) 2025 Nicholas Woolridge & NOCTRL™ (Nô)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to use, copy, modify, merge, publish, distribute, and sublicense the Software, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Verification Requirement
+   • CHARM is a security-critical cryptographic system. Users and contributors must ensure that all modifications, deployments, or derivative works are verified with empirical test results demonstrating correct functionality, performance, and security.
+   • Unverified or experimental deployments are strictly discouraged, and users assume full risk in such cases.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. Attribution
+   • All copies or substantial portions of the Software must include this copyright notice and license.
+
+3. No Warranty
+   • The Software is provided "as is," without any warranty of any kind, express or implied, including but not limited to merchantability, fitness for a particular purpose, or non-infringement.
+   • The authors or copyright holders are not liable for any claims, damages, or other liabilities arising from use, modification, or deployment.
+
+4. Patent Grant
+   • By using or contributing to CHARM, users are granted a non-exclusive, worldwide, royalty-free patent license necessary to use or modify the Software.
+
+5. Contribution Guidelines
+   • All contributions must include real-world test results demonstrating their effect on performance, stability, or security.
+   • Contributions without verifiable results will not be accepted.
+
+6. Redistribution
+   • Redistribution, in source or binary form, must retain this license and clearly indicate any modifications or derivative works.

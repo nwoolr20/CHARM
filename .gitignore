@@ -18,8 +18,9 @@ bench_digest
 # Log files
 *.log
 
-# Core dumps
-core
+# Core dumps (in root and build directories)
+/core
+/build/core
 core.*
 
 # Test outputs
