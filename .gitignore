@@ -25,6 +25,7 @@ core.*
 # Test outputs
 test_output/
 test_results/results_*
+test_results/*_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9]*
 
 # IDE files
 .vscode/
