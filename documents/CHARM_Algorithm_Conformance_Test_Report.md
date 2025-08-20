@@ -24,7 +24,7 @@ Validate the CHARM algorithm implementation using NIST-standard methodologies eq
 - **Name**: CHARM (Chaotic Hierarchical Adaptive Resilient Mechanism)
 - **Version**: CHARM/1.0 (frozen specification)
 - **Variants**: CHARM-256, CHARM-384, CHARM-512
-- **Type**: Linear streaming hash algorithm
+- **Type**: Non-linear sequential streaming hash algorithm
 
 ---
 

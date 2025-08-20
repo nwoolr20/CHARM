@@ -291,7 +291,7 @@ finalize(state, params, message_length):
 - Adaptive round scheduling provides resistance to structured attacks
 - CAEDS prevents exploitation of low-entropy inputs
 - ECE ensures rapid avalanche propagation
-- Linear design avoids tree-based vulnerabilities
+- Sequential design avoids tree-based vulnerabilities
 
 ### 6.3 Keyed Mode Security
 When used with a key, CHARM provides:
