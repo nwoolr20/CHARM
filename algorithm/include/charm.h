@@ -3,12 +3,12 @@
  * @brief CHARM Algorithm API - Clean, Frozen Specification
  * 
  * CHARM (Chaotic Hierarchical Adaptive Resilient Mechanism) Algorithm
- * A linear streaming hash with entropy-native design
+ * A non-linear sequential streaming hash with entropy-native design
  * 
  * This header defines the frozen algorithm specification for CHARM-n where n ∈ {256, 384, 512}
  * 
  * Version: CHARM/1
- * Mode: Linear streaming hash (NOT tree-based, NOT Merkle construction)
+ * Mode: Non-linear sequential streaming hash (NOT tree-based, NOT Merkle construction)
  * Security: Entropy-native cryptographic hash with optional keyed mode
  */
 
