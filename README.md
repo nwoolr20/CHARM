@@ -83,13 +83,13 @@ make benchmark
 
 ## Documentation
 
-Detailed documentation is available in the `docs` directory:
+Detailed documentation is available in the `documents` directory:
 
-- [System Overview](docs/SYSTEM_OVERVIEW.md)
-- [CAEDS Documentation](docs/CAEDS.md)
-- [CEE Documentation](docs/CEE.md)
-- [ECE Documentation](docs/ECE.md)
-- [Entropy Bus Documentation](docs/entropy_bus.md)
+- [System Overview](documents/SYSTEM_OVERVIEW.md)
+- [CAEDS Documentation](documents/CAEDS.md)
+- [CEE Documentation](documents/CEE.md)
+- [ECE Documentation](documents/ECE.md)
+- [Entropy Bus Documentation](documents/entropy_bus.md)
 
 ## Contributing
 
