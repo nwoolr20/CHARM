@@ -99,6 +99,11 @@ charmb: $(BUILD_DIR)/benchmark_charmb.o $(BUILD_DIR)/charmb_core.o $(BUILD_DIR)/
 	@echo "Building CHARM-B (CHARMbit) benchmark..."
 	$(CC) $(CFLAGS) -o $(BUILD_DIR)/benchmark_charmb $^ $(LDFLAGS)
 
+# Build CHARM-B basic test
+test_charmb: $(BUILD_DIR)/test_charmb_basic.o $(BUILD_DIR)/charmb_core.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o
+	@echo "Building CHARM-B basic functionality test..."
+	$(CC) $(CFLAGS) -o $(BUILD_DIR)/test_charmb_basic $^ $(LDFLAGS)
+
 # Build full system
 full: $(LIB_STATIC) $(CHARM_BIN) $(BENCH_BIN)
 
@@ -245,6 +250,7 @@ help:
 	@echo "  enhanced  - Build enhanced comprehensive benchmark"
 	@echo "  small     - Build small inputs benchmark (64B, 256B, 1KB)"
 	@echo "  charmb    - Build CHARM-B (CHARMbit) ultra-small inputs benchmark (≤64B)"
+	@echo "  test_charmb - Build and run CHARM-B basic functionality test"
 	@echo "  test      - Run test suite"
 	@echo "  benchmark - Run performance benchmarks"
 	@echo "  docs      - Generate/show documentation"

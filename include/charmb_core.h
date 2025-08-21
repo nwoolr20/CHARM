@@ -139,6 +139,16 @@ const char* charmb_get_version(void);
  */
 bool charmb_cpu_support(void);
 
+/**
+ * @brief Set test mode for deterministic behavior
+ * 
+ * When enabled, CHARM-B will use deterministic entropy for consistent
+ * results across multiple calls. Only use for testing purposes.
+ * 
+ * @param enable True to enable test mode, false to disable
+ */
+void charmb_set_test_mode(bool enable);
+
 #ifdef __cplusplus
 }
 #endif
