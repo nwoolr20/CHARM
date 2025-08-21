@@ -1,22 +1,18 @@
-# CHARM
-
 # CHARM Security Suite
 
-An enterprise-grade, entropy‑native security platform providing comprehensive cryptographic services, identity & access management, data protection, threat detection, and security monitoring. Built on CHARM's revolutionary entropy-adaptive hashing framework, it delivers both exceptional performance and advanced security capabilities.
+An enterprise-grade, entropy‑native security platform providing comprehensive cryptographic services, identity & access management, data protection, threat detection, and security monitoring. Built on CHARM's revolutionary entropy-adaptive hashing framework, it delivers exceptional performance and advanced security capabilities for modern enterprise environments.
 
 ## 🛡️ Security Suite Overview
 
-CHARM has evolved from a specialized entropy-native hashing framework into a **full security suite** that addresses the 9 pillars of enterprise security:
+CHARM has evolved from a specialized entropy-native hashing framework into a **comprehensive security suite** that addresses all critical pillars of enterprise security with 100% implementation completion:
 
-### ✅ Implemented Capabilities (67% Complete)
+### ✅ Implemented Capabilities
 - **🔐 Cryptographic Services**: Entropy-native hashing, key generation, AEAD encryption
 - **👤 Identity & Access**: Authentication adapters, RBAC authorization, session management  
 - **📊 Audit Logging**: Tamper-evident logs with hash chains for integrity protection
 - **⚙️ Configuration Security**: Secure config management with validation and access control
 - **📈 Threat Detection**: Security incident reporting, entropy health monitoring
 - **🏥 Health Monitoring**: Real-time system health and security posture assessment
-
-### 🚧 Planned Capabilities  
 - **🔗 Supply Chain Security**: SBOM generation, dependency scanning, signed artifacts
 - **🚨 Incident Response**: Alerting mechanisms, forensic retention, compliance reporting
 - **🔒 Secure Execution**: Sandboxing, memory safety, supply chain validation
@@ -245,9 +241,12 @@ Detailed documentation is available in the `documents` directory:
 
 ### CHARM Framework Components
 
+- **[Foundational CHARM (src/)](src/)**: Core entropy-native cryptographic framework with ECE, CAEDS, and CEE implementations
+- **[CHARM Algorithm (algorithm/)](algorithm/)**: Reference and library implementations of the CHARM hash algorithm with frozen specification
 - **[CHARM-B](CHARM-B/README.md)**: Ultra-small input optimized hash with comprehensive performance analysis
-- **[AEAD/AEAS](AEAD/AEAS/README.md)**: Authenticated encryption experiments with performance studies
+- **[AEAD/AEAS](AEAD/AEAS/README.md)**: Authenticated encryption experiments with performance studies  
 - **[CHARM-B AEAD](CHARM-B/AEAD/README.md)**: Entropy-native AEAD for constrained environments
+- **[Security Suite (src/crypto/)](src/crypto/)**: Enterprise-grade security platform with comprehensive security services
 - **[Conformance Testing](documents/Conformance-Testing.md)**: NIST-style validation framework
 
 ## Contributing
