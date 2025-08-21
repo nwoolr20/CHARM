@@ -167,20 +167,6 @@ ece_status_t ece_set_avalanche(ece_handle_t handle, bool enable);
 ece_status_t ece_collapse(const uint8_t* data, size_t data_size, 
                          uint8_t* digest, size_t digest_size);
 
-/**
- * @brief Ultra-fast one-shot collapse optimized for small inputs (≤1KB)
- * 
- * This function provides maximum performance for small data by eliminating
- * context creation overhead and using highly optimized processing paths.
- * 
- * @param data Input data
- * @param data_size Size of input data in bytes (should be ≤ 1024)
- * @param digest Output buffer for digest (must be at least 32 bytes)
- * @return ece_status_t Status code
- */
-ece_status_t ece_collapse_small_fast(const uint8_t* data, size_t data_size, 
-                                    uint8_t* digest);
-
 #ifdef __cplusplus
 }
 #endif
