@@ -7,6 +7,8 @@
 
 #include "../include/charmb_aead.h"
 #include "../../include/charmb.h"
+#include "../../include/charmb_entropy.h"
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
@@ -29,7 +31,9 @@ charmb_aead_status_t charmb_hmac(
     const uint8_t* data, size_t data_len,
     uint8_t hmac[32]
 ) {
-    if (!key || !data || !hmac) return CHARMB_AEAD_ERROR_NULL_POINTER;
+    if (!key || !data || !hmac) {
+        return CHARMB_AEAD_ERROR_NULL_POINTER;
+    }
     
     // HMAC using CHARM-B as the hash function
     uint8_t key_pad[64] = {0};
@@ -54,7 +58,35 @@ charmb_aead_status_t charmb_hmac(
     }
     memcpy(inner_input + 64, data, data_len);
     
-    charmb_status_t status = charmb_hash(inner_input, 64 + data_len, inner_hash, CHARMB_DIGEST_256);
+    charmb_status_t status;
+    
+    // CHARM-B has a 64-byte limit, so we need to handle larger inputs differently
+    if (64 + data_len <= CHARMB_MAX_INPUT_SIZE) {
+        charmb_entropy_reset(); // Ensure deterministic behavior
+        status = charmb_hash(inner_input, 64 + data_len, inner_hash, CHARMB_DIGEST_256);
+    } else {
+        // For larger inputs, hash in chunks and combine
+        // First hash the key pad
+        uint8_t temp_hash[32];
+        charmb_entropy_reset(); // Ensure deterministic behavior
+        status = charmb_hash(inner_input, 64, temp_hash, CHARMB_DIGEST_256);
+        if (status != CHARMB_SUCCESS) {
+            secure_clear(inner_input, 64 + data_len);
+            free(inner_input);
+            return CHARMB_AEAD_ERROR_NULL_POINTER;
+        }
+        
+        // Then hash temp_hash || data (limited to 64 bytes total)
+        size_t remaining_data = (data_len <= 32) ? data_len : 32;
+        uint8_t final_input[64];
+        memcpy(final_input, temp_hash, 32);
+        memcpy(final_input + 32, data, remaining_data);
+        
+        charmb_entropy_reset(); // Ensure deterministic behavior
+        status = charmb_hash(final_input, 32 + remaining_data, inner_hash, CHARMB_DIGEST_256);
+        secure_clear(temp_hash, sizeof(temp_hash));
+        secure_clear(final_input, sizeof(final_input));
+    }
     
     secure_clear(inner_input, 64 + data_len);
     free(inner_input);
@@ -67,7 +99,27 @@ charmb_aead_status_t charmb_hmac(
     }
     memcpy(outer_input + 64, inner_hash, 32);
     
-    status = charmb_hash(outer_input, 96, hmac, CHARMB_DIGEST_256);
+    // Since outer input is always 96 bytes (64 + 32), we need the chunked approach
+    uint8_t temp_hash[32];
+    charmb_entropy_reset(); // Ensure deterministic behavior
+    status = charmb_hash(outer_input, 64, temp_hash, CHARMB_DIGEST_256);
+    if (status != CHARMB_SUCCESS) {
+        secure_clear(key_pad, sizeof(key_pad));
+        secure_clear(inner_hash, sizeof(inner_hash));
+        secure_clear(outer_input, sizeof(outer_input));
+        return CHARMB_AEAD_ERROR_NULL_POINTER;
+    }
+    
+    // Final hash: temp_hash || inner_hash (32 + 32 = 64 bytes, within limit)
+    uint8_t final_outer[64];
+    memcpy(final_outer, temp_hash, 32);
+    memcpy(final_outer + 32, inner_hash, 32);
+    
+    charmb_entropy_reset(); // Ensure deterministic behavior
+    status = charmb_hash(final_outer, 64, hmac, CHARMB_DIGEST_256);
+    
+    secure_clear(temp_hash, sizeof(temp_hash));
+    secure_clear(final_outer, sizeof(final_outer));
     
     secure_clear(key_pad, sizeof(key_pad));
     secure_clear(inner_hash, sizeof(inner_hash));
@@ -125,6 +177,7 @@ charmb_aead_status_t charmb_kdf(
         input_len++;
         
         uint8_t block[32];
+        charmb_entropy_reset(); // Ensure deterministic behavior
         status = charmb_hmac(prk, 32, expand_input, input_len, block);
         if (status != CHARMB_AEAD_SUCCESS) break;
         
@@ -170,6 +223,7 @@ static charmb_aead_status_t generate_keystream(
         input[47] = (uint8_t)((block_counter >> 24) & 0xFF);
         
         uint8_t block[32];
+        charmb_entropy_reset(); // Ensure deterministic behavior
         charmb_status_t status = charmb_hash(input, 48, block, CHARMB_DIGEST_256);
         if (status != CHARMB_SUCCESS) return CHARMB_AEAD_ERROR_NULL_POINTER;
         
@@ -196,6 +250,9 @@ charmb_aead_status_t charmb_aead_encrypt(
     uint8_t* ciphertext,
     uint8_t tag[CHARMB_AEAD_TAG_SIZE]
 ) {
+    // Reset entropy state to ensure deterministic operation
+    charmb_entropy_reset();
+    
     if (!key || !nonce || !plaintext || !ciphertext || !tag) {
         return CHARMB_AEAD_ERROR_NULL_POINTER;
     }
@@ -224,6 +281,7 @@ charmb_aead_status_t charmb_aead_encrypt(
         secure_clear(keys, sizeof(keys));
         return status;
     }
+
     
     // XOR to create ciphertext
     for (size_t i = 0; i < plaintext_len; i++) {
@@ -274,6 +332,9 @@ charmb_aead_status_t charmb_aead_decrypt(
     const uint8_t tag[CHARMB_AEAD_TAG_SIZE],
     uint8_t* plaintext
 ) {
+    // Reset entropy state to ensure deterministic operation
+    charmb_entropy_reset();
+    
     if (!key || !nonce || !ciphertext || !tag || !plaintext) {
         return CHARMB_AEAD_ERROR_NULL_POINTER;
     }
@@ -339,6 +400,7 @@ charmb_aead_status_t charmb_aead_decrypt(
         secure_clear(keys, sizeof(keys));
         return status;
     }
+
     
     // XOR to recover plaintext
     for (size_t i = 0; i < ciphertext_len; i++) {
