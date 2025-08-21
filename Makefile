@@ -117,12 +117,12 @@ core: $(CORE_OBJECTS)
 	$(CC) $(CFLAGS) -o $(CHARM_BIN) $(CORE_OBJECTS) $(LDFLAGS)
 
 # Build comprehensive benchmark
-bench: $(BUILD_DIR)/benchmark_comprehensive.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o third_party_blake3
+bench: $(BUILD_DIR)/benchmark_comprehensive.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o 
 	@echo "Building comprehensive benchmark..."
 	$(CC) $(CFLAGS) -DHAVE_BLAKE3 -o $(COMPREHENSIVE_BENCH) $^ $(LDFLAGS)
 
 # Build enhanced comprehensive benchmark
-enhanced: $(BUILD_DIR)/benchmark_enhanced.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o third_party_blake3
+enhanced: $(BUILD_DIR)/benchmark_enhanced.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o 
 	@echo "Building enhanced comprehensive benchmark..."
 	$(CC) $(CFLAGS) -DHAVE_BLAKE3 -o $(ENHANCED_BENCH) $^ $(LDFLAGS)
 
@@ -206,7 +206,7 @@ charm_opt: $(BUILD_DIR)
 		algorithm/src/charm_opt.c $(LDFLAGS)
 
 # NIST-style conformance testing
-conformance: $(BUILD_DIR) third_party_blake3
+conformance: $(BUILD_DIR) 
 	@echo "Building NIST-style conformance test suite..."
 	@mkdir -p conformance/nist/reports
 	g++ $(CFLAGS) -Ialgorithm/include -o $(BUILD_DIR)/charm_kat \
@@ -276,7 +276,7 @@ conformance-quick:
 	@./build/charm_kat 2>/dev/null | grep -E "(PASS|FAIL|passed|total)" || echo "Tests completed"
 
 # Build third-party BLAKE3 library
-third_party_blake3:
+:
 	@echo "Building BLAKE3 library..."
 	cd third_party/crypto/blake3/c && \
 	gcc -O3 -c blake3.c blake3_dispatch.c blake3_portable.c blake3_sse2.c blake3_sse41.c blake3_avx2.c -mavx2 -msse4.1 -msse2 && \
@@ -309,7 +309,7 @@ help:
 	@echo "  security_analysis - Run security analysis (avalanche & side-channel)"
 	@echo "  performance_profile - Run performance profiling tests"
 	@echo "  acvp_test - Run ACVP protocol compatibility tests"
-	@echo "  third_party_blake3 - Build BLAKE3 library for benchmarking"
+	@echo "   - Build BLAKE3 library for benchmarking"
 	@echo "  enhanced  - Build enhanced comprehensive benchmark"
 	@echo "  small     - Build small inputs benchmark (64B, 256B, 1KB)"
 	@echo "  test      - Run test suite"
