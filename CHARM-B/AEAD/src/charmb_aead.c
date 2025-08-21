@@ -7,6 +7,7 @@
 
 #include "../include/charmb_aead.h"
 #include "../../include/charmb.h"
+#include "../../include/charmb_entropy.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -61,11 +62,13 @@ charmb_aead_status_t charmb_hmac(
     
     // CHARM-B has a 64-byte limit, so we need to handle larger inputs differently
     if (64 + data_len <= CHARMB_MAX_INPUT_SIZE) {
+        charmb_entropy_reset(); // Ensure deterministic behavior
         status = charmb_hash(inner_input, 64 + data_len, inner_hash, CHARMB_DIGEST_256);
     } else {
         // For larger inputs, hash in chunks and combine
         // First hash the key pad
         uint8_t temp_hash[32];
+        charmb_entropy_reset(); // Ensure deterministic behavior
         status = charmb_hash(inner_input, 64, temp_hash, CHARMB_DIGEST_256);
         if (status != CHARMB_SUCCESS) {
             secure_clear(inner_input, 64 + data_len);
@@ -79,6 +82,7 @@ charmb_aead_status_t charmb_hmac(
         memcpy(final_input, temp_hash, 32);
         memcpy(final_input + 32, data, remaining_data);
         
+        charmb_entropy_reset(); // Ensure deterministic behavior
         status = charmb_hash(final_input, 32 + remaining_data, inner_hash, CHARMB_DIGEST_256);
         secure_clear(temp_hash, sizeof(temp_hash));
         secure_clear(final_input, sizeof(final_input));
@@ -97,6 +101,7 @@ charmb_aead_status_t charmb_hmac(
     
     // Since outer input is always 96 bytes (64 + 32), we need the chunked approach
     uint8_t temp_hash[32];
+    charmb_entropy_reset(); // Ensure deterministic behavior
     status = charmb_hash(outer_input, 64, temp_hash, CHARMB_DIGEST_256);
     if (status != CHARMB_SUCCESS) {
         secure_clear(key_pad, sizeof(key_pad));
@@ -110,6 +115,7 @@ charmb_aead_status_t charmb_hmac(
     memcpy(final_outer, temp_hash, 32);
     memcpy(final_outer + 32, inner_hash, 32);
     
+    charmb_entropy_reset(); // Ensure deterministic behavior
     status = charmb_hash(final_outer, 64, hmac, CHARMB_DIGEST_256);
     
     secure_clear(temp_hash, sizeof(temp_hash));
@@ -171,6 +177,7 @@ charmb_aead_status_t charmb_kdf(
         input_len++;
         
         uint8_t block[32];
+        charmb_entropy_reset(); // Ensure deterministic behavior
         status = charmb_hmac(prk, 32, expand_input, input_len, block);
         if (status != CHARMB_AEAD_SUCCESS) break;
         
@@ -216,6 +223,7 @@ static charmb_aead_status_t generate_keystream(
         input[47] = (uint8_t)((block_counter >> 24) & 0xFF);
         
         uint8_t block[32];
+        charmb_entropy_reset(); // Ensure deterministic behavior
         charmb_status_t status = charmb_hash(input, 48, block, CHARMB_DIGEST_256);
         if (status != CHARMB_SUCCESS) return CHARMB_AEAD_ERROR_NULL_POINTER;
         
@@ -242,6 +250,9 @@ charmb_aead_status_t charmb_aead_encrypt(
     uint8_t* ciphertext,
     uint8_t tag[CHARMB_AEAD_TAG_SIZE]
 ) {
+    // Reset entropy state to ensure deterministic operation
+    charmb_entropy_reset();
+    
     if (!key || !nonce || !plaintext || !ciphertext || !tag) {
         return CHARMB_AEAD_ERROR_NULL_POINTER;
     }
@@ -270,10 +281,7 @@ charmb_aead_status_t charmb_aead_encrypt(
         secure_clear(keys, sizeof(keys));
         return status;
     }
-    
-    printf("DEBUG ENCRYPT: First 16 bytes of keystream: ");
-    for (int i = 0; i < 16 && i < (int)plaintext_len; i++) printf("%02x", keystream[i]);
-    printf("\n");
+
     
     // XOR to create ciphertext
     for (size_t i = 0; i < plaintext_len; i++) {
@@ -298,13 +306,6 @@ charmb_aead_status_t charmb_aead_encrypt(
     memcpy(auth_input + aad_len, ciphertext, plaintext_len);
     
     uint8_t full_tag[32];
-    printf("DEBUG ENCRYPT: About to compute HMAC over %zu bytes (aad_len=%zu + plaintext_len=%zu)\n", 
-           auth_input_len, aad_len, plaintext_len);
-    printf("DEBUG ENCRYPT: First 16 bytes of auth_input: ");
-    for (int i = 0; i < 16 && i < (int)auth_input_len; i++) printf("%02x", auth_input[i]);
-    printf("\nDEBUG ENCRYPT: Ciphertext part of auth_input (bytes 29-48): ");
-    for (int i = 29; i < 49 && i < (int)auth_input_len; i++) printf("%02x", auth_input[i]);
-    printf("\n");
     status = charmb_hmac(auth_key, 32, auth_input, auth_input_len, full_tag);
     
     secure_clear(auth_input, auth_input_len);
@@ -315,9 +316,6 @@ charmb_aead_status_t charmb_aead_encrypt(
     
     // Truncate tag to 16 bytes
     memcpy(tag, full_tag, 16);
-    printf("DEBUG ENCRYPT: Generated tag: ");
-    for (int i = 0; i < 16; i++) printf("%02x", tag[i]);
-    printf("\n");
     secure_clear(full_tag, sizeof(full_tag));
     
     return CHARMB_AEAD_SUCCESS;
@@ -334,6 +332,9 @@ charmb_aead_status_t charmb_aead_decrypt(
     const uint8_t tag[CHARMB_AEAD_TAG_SIZE],
     uint8_t* plaintext
 ) {
+    // Reset entropy state to ensure deterministic operation
+    charmb_entropy_reset();
+    
     if (!key || !nonce || !ciphertext || !tag || !plaintext) {
         return CHARMB_AEAD_ERROR_NULL_POINTER;
     }
@@ -362,13 +363,6 @@ charmb_aead_status_t charmb_aead_decrypt(
     memcpy(auth_input + aad_len, ciphertext, ciphertext_len);
     
     uint8_t computed_tag[32];
-    printf("DEBUG DECRYPT: About to compute HMAC over %zu bytes (aad_len=%zu + ciphertext_len=%zu)\n", 
-           auth_input_len, aad_len, ciphertext_len);
-    printf("DEBUG DECRYPT: First 16 bytes of auth_input: ");
-    for (int i = 0; i < 16 && i < (int)auth_input_len; i++) printf("%02x", auth_input[i]);
-    printf("\nDEBUG DECRYPT: Ciphertext part of auth_input (bytes 29-48): ");
-    for (int i = 29; i < 49 && i < (int)auth_input_len; i++) printf("%02x", auth_input[i]);
-    printf("\n");
     status = charmb_hmac(auth_key, 32, auth_input, auth_input_len, computed_tag);
     
     secure_clear(auth_input, auth_input_len);
@@ -385,16 +379,9 @@ charmb_aead_status_t charmb_aead_decrypt(
         tag_match |= tag[i] ^ computed_tag[i];
     }
     
-    printf("DEBUG DECRYPT: Computed tag: ");
-    for (int i = 0; i < 16; i++) printf("%02x", computed_tag[i]);
-    printf("\nDEBUG DECRYPT: Expected tag: ");
-    for (int i = 0; i < 16; i++) printf("%02x", tag[i]);
-    printf("\n");
-    
     secure_clear(computed_tag, sizeof(computed_tag));
     
     if (tag_match != 0) {
-        printf("DEBUG DECRYPT: Tag mismatch, tag_match = %02x\n", tag_match);
         secure_clear(keys, sizeof(keys));
         return CHARMB_AEAD_ERROR_AUTH_FAILED;
     }
@@ -413,10 +400,7 @@ charmb_aead_status_t charmb_aead_decrypt(
         secure_clear(keys, sizeof(keys));
         return status;
     }
-    
-    printf("DEBUG DECRYPT: First 16 bytes of keystream: ");
-    for (int i = 0; i < 16 && i < (int)ciphertext_len; i++) printf("%02x", keystream[i]);
-    printf("\n");
+
     
     // XOR to recover plaintext
     for (size_t i = 0; i < ciphertext_len; i++) {

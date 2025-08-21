@@ -1,8 +1,12 @@
 # CHARM
 
-CHARM is an entropy-native cryptographic framework that serves as both a high-performance hashing system and a dynamic entropy management engine. Drawing on chaotic dynamics, it self-regulates via three core subsystems—CAEDS (entropy diagnostics), CEE (entropy expansion), and ECE (entropic collapse)—to adapt to input conditions, maintain stability, and ensure strong data integrity. It's designed for efficiency across workloads and supports use cases like blockchain security, distributed systems integrity, secure storage, and cryptographic protocols.
+# CHARM
+
+CHARM is an experimental, entropy‑native cryptographic hashing framework with an integrated entropy collection/diagnostics layer, a small‑input-optimized variant (CHARM‑B), early AEAD experiments, and a NIST‑style conformance harness. Drawing on chaotic dynamics, it self-regulates via three core subsystems—CAEDS (entropy diagnostics), CEE (entropy expansion), and ECE (entropic collapse)—to adapt to input conditions, maintain stability, and ensure strong data integrity. It's designed for efficiency across workloads and supports use cases like blockchain security, distributed systems integrity, secure storage, and cryptographic protocols.
 
 The CHARM algorithm in a nutshell: CHARM/1.0 is a non-linear, sequential streaming hash (not tree/Merkle) with fixed 64-byte blocks and 16KB processing chunks, offering 256/384/512-bit outputs. It uses an entropy-native design with adaptive round scheduling (between a fixed min/max) driven by lightweight entropy diagnostics, applying non-linear, chaotic-style mixing during block processing and an "entropic collapse" finalization to extract the digest. The internal state is compact (128 bytes), the spec is frozen and deterministic, and implementations provide a clean init/update/final API with optional keyed mode. The design emphasizes constant-time operations, SIMD acceleration (AVX2/NEON), streaming invariance, and auditability of a simple sequential core.
+
+The CHARM suite includes specialized variants and cryptographic primitives: **CHARM-B** provides ultra-small input optimization (≤64 bytes) with revolutionary performance gains, **AEAD/AEAS** offers authenticated encryption experiments, and **CHARM-B AEAD** delivers entropy-native authenticated encryption for constrained environments. The framework includes comprehensive conformance testing, NIST-style validation harnesses, and extensive benchmarking against established algorithms.
 
 What CHARM aims to do versus SHA and BLAKE is deliver a modern, entropy-aware hash that keeps the simplicity and determinism of a streaming design while outperforming SHA-256 and BLAKE3 at practical payload sizes—without sacrificing cryptographic strength or forward-looking ("quantum-ready") properties. According to the repo's comprehensive benchmark reports, CHARM now beats SHA-256 starting at 4KB inputs (about +3% at 4KB), and shows large advantages for bigger data (roughly +247–283% at 16KB+). Against BLAKE3, it remains competitive on tiny inputs, and leads for larger sizes (about +100–150% at 16KB+). Security-wise, the project includes NIST-style conformance harnesses (KATs, Monte Carlo, avalanche, streaming invariance), passes its internal security analysis, and provides constant-time paths with SIMD optimizations.
 
@@ -37,6 +41,8 @@ Together, these modules make CHARM a self-regulating, high-performance hashing f
 2. **Distributed Systems**: Ensures data integrity and consistency across nodes under varying load conditions, resilient to tampering or network noise.
 3. **Secure Storage & Archiving**: Provides consistent, high-performance hashing across files of all sizes, with long-term quantum-resistant verification.
 4. **Cryptographic Protocols**: Serves as a core component in key derivation functions, secure communication channels, and authentication mechanisms.
+5. **IoT and Embedded Systems**: CHARM-B provides ultra-efficient hashing for constrained devices, with CHARM-B AEAD offering authenticated encryption without hardware dependencies.
+6. **Research and Development**: Comprehensive test suites and benchmarking framework support cryptographic research and algorithm development.
 
 ## Installation and Setup
 
@@ -93,6 +99,13 @@ Detailed documentation is available in the `documents` directory:
 - [ECE Documentation](documents/ECE.md)
 - [Entropy Bus Documentation](documents/entropy_bus.md)
 
+### CHARM Suite Components
+
+- **[CHARM-B](CHARM-B/README.md)**: Ultra-small input optimized hash with comprehensive performance analysis
+- **[AEAD/AEAS](AEAD/AEAS/README.md)**: Authenticated encryption experiments with performance studies
+- **[CHARM-B AEAD](CHARM-B/AEAD/README.md)**: Entropy-native AEAD for constrained environments
+- **[Conformance Testing](documents/Conformance-Testing.md)**: NIST-style validation framework
+
 ## Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to CHARM. All contributions must be backed by empirical test results demonstrating performance, stability, or security improvements.
@@ -103,4 +116,4 @@ This project is licensed under the CHARM License 2025. See [LICENSE](LICENSE) fo
 
 ---
 
-CHARM is more than a hash function—it is a dynamic entropy-management engine that works like a charm, integrating performance, adaptability, and cutting-edge cryptographic security, suitable for a broad spectrum of computing and security-critical applications.
+CHARM is more than a hash function—it is a comprehensive cryptographic framework that integrates entropy management, high-performance hashing, authenticated encryption, and rigorous validation. The suite provides tools for research, development, and specialized applications where entropy-native cryptography offers advantages over conventional approaches.
