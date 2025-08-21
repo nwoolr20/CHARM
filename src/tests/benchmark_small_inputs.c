@@ -52,9 +52,23 @@ static void generate_test_data(uint8_t* data, size_t size, uint32_t seed) {
 
 // CHARM benchmark with ultra-optimized configuration for small inputs
 static int benchmark_charm_small(const uint8_t* data, size_t size, benchmark_result_t* result) {
-    // Warmup runs with ultra-fast one-shot function
+    // Ultra-optimized configuration specifically for small inputs
+    ece_config_t config = {
+        .collapse_rounds = 1,          // Absolute minimum rounds for speed
+        .use_ternary_logic = false,    // Skip all optional features
+        .use_trampoline = false,       // Skip all optional features
+        .use_avalanche = false,        // Skip all optional features
+        .entropy_quality = 0.1,        // Minimum quality for maximum speed
+        // Note: constant_time is now always enabled for timing attack mitigation
+    };
+    
+    // Warmup runs
     for (int iter = 0; iter < NUM_WARMUP; iter++) {
-        ece_collapse_small_fast(data, size, result->digest);
+        ece_handle_t handle = ece_init(&config);
+        if (!handle) continue;
+        ece_process_block(handle, data, size);
+        ece_finalize(handle, result->digest, 32);
+        ece_shutdown(handle);
     }
     
     // Actual benchmark with cycle counting
@@ -62,7 +76,12 @@ static int benchmark_charm_small(const uint8_t* data, size_t size, benchmark_res
     double start_time = get_time_ms();
     
     for (int iter = 0; iter < NUM_ITERATIONS; iter++) {
-        ece_collapse_small_fast(data, size, result->digest);
+        ece_handle_t handle = ece_init(&config);
+        if (!handle) return -1;
+        
+        ece_process_block(handle, data, size);
+        ece_finalize(handle, result->digest, 32);
+        ece_shutdown(handle);
     }
     
     uint64_t end_cycles = rdtsc();

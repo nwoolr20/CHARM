@@ -53,23 +53,7 @@ static void generate_test_data(uint8_t* data, size_t size, uint32_t seed) {
 
 // CHARM benchmark function - optimized for small inputs
 static int benchmark_charm(const uint8_t* data, size_t size, benchmark_result_t* result) {
-    // Use ultra-fast path for small inputs (≤1KB)
-    if (size <= 1024) {
-        double start_time = get_time_ms();
-        
-        for (int iter = 0; iter < NUM_ITERATIONS; iter++) {
-            ece_collapse_small_fast(data, size, result->digest);
-        }
-        
-        double end_time = get_time_ms();
-        result->time_ms = (end_time - start_time) / NUM_ITERATIONS;
-        result->throughput_mbps = (size / (1024.0 * 1024.0)) / (result->time_ms / 1000.0);
-        result->name = "CHARM";
-        
-        return 0;
-    }
-    
-    // Use regular path for larger inputs
+    // Use ultra-optimized configuration for small inputs
     ece_config_t config = {
         .collapse_rounds = (size <= 64) ? 1 : (size <= 256) ? 2 : 3,  // Minimal rounds for small inputs
         .use_ternary_logic = false,                  // Always skip ternary for speed
