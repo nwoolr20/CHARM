@@ -12,6 +12,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdbool.h>
 
 /**
  * @brief Secure memory clear
@@ -34,6 +35,9 @@ charmb_aead_status_t charmb_hmac(
     if (!key || !data || !hmac) {
         return CHARMB_AEAD_ERROR_NULL_POINTER;
     }
+    
+    // Ensure deterministic HMAC computation
+    charmb_entropy_reset();
     
     // HMAC using CHARM-B as the hash function
     uint8_t key_pad[64] = {0};
@@ -62,13 +66,11 @@ charmb_aead_status_t charmb_hmac(
     
     // CHARM-B has a 64-byte limit, so we need to handle larger inputs differently
     if (64 + data_len <= CHARMB_MAX_INPUT_SIZE) {
-        charmb_entropy_reset(); // Ensure deterministic behavior
         status = charmb_hash(inner_input, 64 + data_len, inner_hash, CHARMB_DIGEST_256);
     } else {
         // For larger inputs, hash in chunks and combine
         // First hash the key pad
         uint8_t temp_hash[32];
-        charmb_entropy_reset(); // Ensure deterministic behavior
         status = charmb_hash(inner_input, 64, temp_hash, CHARMB_DIGEST_256);
         if (status != CHARMB_SUCCESS) {
             secure_clear(inner_input, 64 + data_len);
@@ -82,7 +84,6 @@ charmb_aead_status_t charmb_hmac(
         memcpy(final_input, temp_hash, 32);
         memcpy(final_input + 32, data, remaining_data);
         
-        charmb_entropy_reset(); // Ensure deterministic behavior
         status = charmb_hash(final_input, 32 + remaining_data, inner_hash, CHARMB_DIGEST_256);
         secure_clear(temp_hash, sizeof(temp_hash));
         secure_clear(final_input, sizeof(final_input));
@@ -101,7 +102,6 @@ charmb_aead_status_t charmb_hmac(
     
     // Since outer input is always 96 bytes (64 + 32), we need the chunked approach
     uint8_t temp_hash[32];
-    charmb_entropy_reset(); // Ensure deterministic behavior
     status = charmb_hash(outer_input, 64, temp_hash, CHARMB_DIGEST_256);
     if (status != CHARMB_SUCCESS) {
         secure_clear(key_pad, sizeof(key_pad));
@@ -115,7 +115,6 @@ charmb_aead_status_t charmb_hmac(
     memcpy(final_outer, temp_hash, 32);
     memcpy(final_outer + 32, inner_hash, 32);
     
-    charmb_entropy_reset(); // Ensure deterministic behavior
     status = charmb_hash(final_outer, 64, hmac, CHARMB_DIGEST_256);
     
     secure_clear(temp_hash, sizeof(temp_hash));
@@ -177,7 +176,6 @@ charmb_aead_status_t charmb_kdf(
         input_len++;
         
         uint8_t block[32];
-        charmb_entropy_reset(); // Ensure deterministic behavior
         status = charmb_hmac(prk, 32, expand_input, input_len, block);
         if (status != CHARMB_AEAD_SUCCESS) break;
         
@@ -223,7 +221,6 @@ static charmb_aead_status_t generate_keystream(
         input[47] = (uint8_t)((block_counter >> 24) & 0xFF);
         
         uint8_t block[32];
-        charmb_entropy_reset(); // Ensure deterministic behavior
         charmb_status_t status = charmb_hash(input, 48, block, CHARMB_DIGEST_256);
         if (status != CHARMB_SUCCESS) return CHARMB_AEAD_ERROR_NULL_POINTER;
         
@@ -267,17 +264,25 @@ charmb_aead_status_t charmb_aead_encrypt(
     const uint8_t* enc_key = keys;
     const uint8_t* auth_key = keys + 32;
     
-    // Generate keystream and encrypt
-    uint8_t* keystream = malloc(plaintext_len);
-    if (!keystream) {
-        secure_clear(keys, sizeof(keys));
-        return CHARMB_AEAD_ERROR_NULL_POINTER;
+    // Generate keystream and encrypt - optimized for small payloads
+    uint8_t keystream_stack[256]; // Stack buffer for small payloads
+    uint8_t* keystream;
+    bool use_heap = plaintext_len > 256;
+    
+    if (use_heap) {
+        keystream = malloc(plaintext_len);
+        if (!keystream) {
+            secure_clear(keys, sizeof(keys));
+            return CHARMB_AEAD_ERROR_NULL_POINTER;
+        }
+    } else {
+        keystream = keystream_stack;
     }
     
     status = generate_keystream(enc_key, nonce, 1, keystream, plaintext_len);
     if (status != CHARMB_AEAD_SUCCESS) {
         secure_clear(keystream, plaintext_len);
-        free(keystream);
+        if (use_heap) free(keystream);
         secure_clear(keys, sizeof(keys));
         return status;
     }
@@ -289,15 +294,23 @@ charmb_aead_status_t charmb_aead_encrypt(
     }
     
     secure_clear(keystream, plaintext_len);
-    free(keystream);
+    if (use_heap) free(keystream);
     
-    // Compute authentication tag
+    // Compute authentication tag - optimized for small payloads
     // Tag = HMAC(auth_key, AAD || ciphertext)
     size_t auth_input_len = aad_len + plaintext_len;
-    uint8_t* auth_input = malloc(auth_input_len);
-    if (!auth_input) {
-        secure_clear(keys, sizeof(keys));
-        return CHARMB_AEAD_ERROR_NULL_POINTER;
+    uint8_t auth_input_stack[512]; // Stack buffer for small auth data
+    uint8_t* auth_input;
+    bool use_heap_auth = auth_input_len > 512;
+    
+    if (use_heap_auth) {
+        auth_input = malloc(auth_input_len);
+        if (!auth_input) {
+            secure_clear(keys, sizeof(keys));
+            return CHARMB_AEAD_ERROR_NULL_POINTER;
+        }
+    } else {
+        auth_input = auth_input_stack;
     }
     
     if (aad && aad_len > 0) {
@@ -309,7 +322,7 @@ charmb_aead_status_t charmb_aead_encrypt(
     status = charmb_hmac(auth_key, 32, auth_input, auth_input_len, full_tag);
     
     secure_clear(auth_input, auth_input_len);
-    free(auth_input);
+    if (use_heap_auth) free(auth_input);
     secure_clear(keys, sizeof(keys));
     
     if (status != CHARMB_AEAD_SUCCESS) return status;
@@ -349,12 +362,20 @@ charmb_aead_status_t charmb_aead_decrypt(
     const uint8_t* enc_key = keys;
     const uint8_t* auth_key = keys + 32;
     
-    // Verify authentication tag first
+    // Verify authentication tag first - optimized for small payloads
     size_t auth_input_len = aad_len + ciphertext_len;
-    uint8_t* auth_input = malloc(auth_input_len);
-    if (!auth_input) {
-        secure_clear(keys, sizeof(keys));
-        return CHARMB_AEAD_ERROR_NULL_POINTER;
+    uint8_t auth_input_stack[512]; // Stack buffer for small auth data
+    uint8_t* auth_input;
+    bool use_heap_auth = auth_input_len > 512;
+    
+    if (use_heap_auth) {
+        auth_input = malloc(auth_input_len);
+        if (!auth_input) {
+            secure_clear(keys, sizeof(keys));
+            return CHARMB_AEAD_ERROR_NULL_POINTER;
+        }
+    } else {
+        auth_input = auth_input_stack;
     }
     
     if (aad && aad_len > 0) {
@@ -366,7 +387,7 @@ charmb_aead_status_t charmb_aead_decrypt(
     status = charmb_hmac(auth_key, 32, auth_input, auth_input_len, computed_tag);
     
     secure_clear(auth_input, auth_input_len);
-    free(auth_input);
+    if (use_heap_auth) free(auth_input);
     
     if (status != CHARMB_AEAD_SUCCESS) {
         secure_clear(keys, sizeof(keys));
@@ -386,17 +407,25 @@ charmb_aead_status_t charmb_aead_decrypt(
         return CHARMB_AEAD_ERROR_AUTH_FAILED;
     }
     
-    // Generate keystream and decrypt
-    uint8_t* keystream = malloc(ciphertext_len);
-    if (!keystream) {
-        secure_clear(keys, sizeof(keys));
-        return CHARMB_AEAD_ERROR_NULL_POINTER;
+    // Generate keystream and decrypt - optimized for small payloads
+    uint8_t keystream_stack[256]; // Stack buffer for small payloads
+    uint8_t* keystream;
+    bool use_heap_ks = ciphertext_len > 256;
+    
+    if (use_heap_ks) {
+        keystream = malloc(ciphertext_len);
+        if (!keystream) {
+            secure_clear(keys, sizeof(keys));
+            return CHARMB_AEAD_ERROR_NULL_POINTER;
+        }
+    } else {
+        keystream = keystream_stack;
     }
     
     status = generate_keystream(enc_key, nonce, 1, keystream, ciphertext_len);
     if (status != CHARMB_AEAD_SUCCESS) {
         secure_clear(keystream, ciphertext_len);
-        free(keystream);
+        if (use_heap_ks) free(keystream);
         secure_clear(keys, sizeof(keys));
         return status;
     }
@@ -408,7 +437,7 @@ charmb_aead_status_t charmb_aead_decrypt(
     }
     
     secure_clear(keystream, ciphertext_len);
-    free(keystream);
+    if (use_heap_ks) free(keystream);
     secure_clear(keys, sizeof(keys));
     
     return CHARMB_AEAD_SUCCESS;
