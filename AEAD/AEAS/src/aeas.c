@@ -10,7 +10,9 @@
 #include "hkdf_charm.h"
 #include "poly1305.h"
 #include "util.h"
+#include "../../algorithm/include/charm.h"
 #include <string.h>
+#include <stdlib.h>
 
 /**
  * @brief Generate keystream using HMAC-CHARM
@@ -42,6 +44,127 @@ static int aeas_generate_keystream(const uint8_t k_enc[32],
 }
 
 /**
+ * @brief Fast HMAC-CHARM for keystream generation with pre-allocated context
+ * 
+ * This optimization avoids malloc/free in the hot path by reusing a context.
+ * For small data encryption, this can provide significant performance gains.
+ */
+static int aeas_hmac_keystream_fast(const uint8_t k_enc[32],
+                                   const uint8_t* input, size_t input_len,
+                                   uint8_t output[32]) {
+    
+    // Use stack allocation for better performance with small data
+    uint8_t ctx_buffer[512]; // Reasonable buffer for CHARM context
+    charm_ctx_t* ctx = (charm_ctx_t*)ctx_buffer;
+    
+    uint8_t key_pad[64];
+    uint8_t inner_hash[32];
+    
+    // Prepare key (32-byte keys don't need hashing)
+    memcpy(key_pad, k_enc, 32);
+    memset(key_pad + 32, 0, 64 - 32);
+    
+    // Inner hash: CHARM(key XOR ipad || input)
+    {
+        charm_params_t params = {
+            .version = 1,
+            .out_bits = 256,
+            .flags = 0,
+            .reserved = {0}
+        };
+        
+        if (charm_init(ctx, &params, NULL, 0, NULL, 0) != 0) {
+            return -1;
+        }
+        
+        // XOR key with ipad and update
+        uint8_t ipad_key[64];
+        for (int i = 0; i < 64; i++) {
+            ipad_key[i] = key_pad[i] ^ 0x36;
+        }
+        
+        if (charm_update(ctx, ipad_key, 64) != 0 ||
+            charm_update(ctx, input, input_len) != 0 ||
+            charm_final(ctx, inner_hash) != 0) {
+            util_secure_clear(ipad_key, sizeof(ipad_key));
+            return -1;
+        }
+        
+        util_secure_clear(ipad_key, sizeof(ipad_key));
+    }
+    
+    // Outer hash: CHARM(key XOR opad || inner_hash)
+    {
+        charm_params_t params = {
+            .version = 1,
+            .out_bits = 256,
+            .flags = 0,
+            .reserved = {0}
+        };
+        
+        if (charm_init(ctx, &params, NULL, 0, NULL, 0) != 0) {
+            return -1;
+        }
+        
+        // XOR key with opad and update
+        uint8_t opad_key[64];
+        for (int i = 0; i < 64; i++) {
+            opad_key[i] = key_pad[i] ^ 0x5C;
+        }
+        
+        if (charm_update(ctx, opad_key, 64) != 0 ||
+            charm_update(ctx, inner_hash, 32) != 0 ||
+            charm_final(ctx, output) != 0) {
+            util_secure_clear(opad_key, sizeof(opad_key));
+            return -1;
+        }
+        
+        util_secure_clear(opad_key, sizeof(opad_key));
+    }
+    
+    util_secure_clear(key_pad, sizeof(key_pad));
+    util_secure_clear(inner_hash, sizeof(inner_hash));
+    
+    return 0;
+}
+
+/**
+ * @brief Generate multiple keystream blocks efficiently for small data
+ * 
+ * For small data sizes (up to 4 blocks = 128 bytes), this function optimizes
+ * keystream generation by using the fast HMAC implementation.
+ */
+static int aeas_generate_keystream_small(const uint8_t k_enc[32],
+                                        const uint8_t nonce[AEAS_NONCE_SIZE],
+                                        uint64_t counter,
+                                        uint32_t num_blocks,
+                                        uint8_t keystream_out[]) {
+    if (num_blocks == 0 || num_blocks > 4) {
+        return -1;
+    }
+    
+    // Generate each block using optimized HMAC
+    for (uint32_t i = 0; i < num_blocks; i++) {
+        uint8_t input[AEAS_NONCE_SIZE + 8 + 4];
+        
+        // Build input: nonce || counter || block_idx
+        memcpy(input, nonce, AEAS_NONCE_SIZE);
+        util_le64_encode(counter, input + AEAS_NONCE_SIZE);
+        util_le32_encode(i, input + AEAS_NONCE_SIZE + 8);
+        
+        if (aeas_hmac_keystream_fast(k_enc, input, sizeof(input), 
+                                    keystream_out + (i * 32)) != 0) {
+            util_secure_clear(input, sizeof(input));
+            return -1;
+        }
+        
+        util_secure_clear(input, sizeof(input));
+    }
+    
+    return 0;
+}
+
+/**
  * @brief XOR data with keystream
  */
 static void aeas_xor_keystream(const uint8_t* input, size_t input_len,
@@ -50,6 +173,39 @@ static void aeas_xor_keystream(const uint8_t* input, size_t input_len,
                                uint64_t counter,
                                uint8_t* output) {
     
+    // Optimize for small data sizes (up to 4 blocks = 128 bytes)
+    if (input_len <= 128) {
+        uint32_t num_blocks = (uint32_t)((input_len + 31) / 32);
+        uint8_t keystream_batch[128]; // Up to 4 blocks
+        
+        if (aeas_generate_keystream_small(k_enc, nonce, counter, num_blocks, keystream_batch) == 0) {
+            // Fast XOR for small data using 64-bit operations where possible
+            size_t i = 0;
+            
+            // XOR 8 bytes at a time for better performance
+            while (i + 8 <= input_len) {
+                uint64_t input_val, keystream_val;
+                memcpy(&input_val, input + i, 8);
+                memcpy(&keystream_val, keystream_batch + i, 8);
+                uint64_t result = input_val ^ keystream_val;
+                memcpy(output + i, &result, 8);
+                i += 8;
+            }
+            
+            // Handle remaining bytes
+            while (i < input_len) {
+                output[i] = input[i] ^ keystream_batch[i];
+                i++;
+            }
+            
+            util_secure_clear(keystream_batch, sizeof(keystream_batch));
+            return;
+        }
+        // Fall back to regular method on error
+        util_secure_clear(keystream_batch, sizeof(keystream_batch));
+    }
+    
+    // Standard method for larger data or fallback
     size_t offset = 0;
     uint32_t block_idx = 0;
     
