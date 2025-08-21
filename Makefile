@@ -82,12 +82,12 @@ core: $(CORE_OBJECTS)
 # Build comprehensive benchmark
 bench: $(BUILD_DIR)/benchmark_comprehensive.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o third_party_blake3
 	@echo "Building comprehensive benchmark..."
-	$(CC) $(CFLAGS) -DHAVE_BLAKE3 -o $(COMPREHENSIVE_BENCH) $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -DHAVE_BLAKE3 -o $(COMPREHENSIVE_BENCH) $(BUILD_DIR)/benchmark_comprehensive.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o $(LDFLAGS)
 
 # Build enhanced comprehensive benchmark
 enhanced: $(BUILD_DIR)/benchmark_enhanced.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o third_party_blake3
 	@echo "Building enhanced comprehensive benchmark..."
-	$(CC) $(CFLAGS) -DHAVE_BLAKE3 -o $(ENHANCED_BENCH) $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -DHAVE_BLAKE3 -o $(ENHANCED_BENCH) $(BUILD_DIR)/benchmark_enhanced.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o $(LDFLAGS)
 
 # Build small inputs benchmark
 small: $(BUILD_DIR)/benchmark_small_inputs.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o
@@ -206,7 +206,7 @@ conformance-quick:
 third_party_blake3:
 	@echo "Building BLAKE3 library..."
 	cd third_party/crypto/blake3/c && \
-	gcc -O3 -c blake3.c blake3_dispatch.c blake3_portable.c blake3_sse2.c blake3_sse41.c blake3_avx2.c -mavx2 -msse4.1 -msse2 && \
+	gcc -O3 -c blake3.c blake3_dispatch.c blake3_portable.c blake3_sse2.c blake3_sse41.c blake3_avx2.c -mavx2 -msse4.1 -msse2 -DBLAKE3_NO_AVX512 && \
 	ar rcs libblake3.a blake3.o blake3_dispatch.o blake3_portable.o blake3_sse2.o blake3_sse41.o blake3_avx2.o && \
 	cp libblake3.a ../../../../
 
