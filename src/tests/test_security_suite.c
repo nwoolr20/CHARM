@@ -39,11 +39,26 @@ int main(void) {
         if (capabilities & CHARM_CAPABILITY_IDENTITY_ACCESS) {
             printf("     - Identity & Access ✅\n");
         }
+        if (capabilities & CHARM_CAPABILITY_DATA_PROTECTION) {
+            printf("     - Data Protection ✅\n");
+        }
         if (capabilities & CHARM_CAPABILITY_AUDIT_LOGGING) {
             printf("     - Audit Logging ✅\n");
         }
         if (capabilities & CHARM_CAPABILITY_CONFIG_MANAGEMENT) {
             printf("     - Configuration Management ✅\n");
+        }
+        if (capabilities & CHARM_CAPABILITY_THREAT_DETECTION) {
+            printf("     - Threat Detection ✅\n");
+        }
+        if (capabilities & CHARM_CAPABILITY_VULNERABILITY_MGMT) {
+            printf("     - Vulnerability Management ✅\n");
+        }
+        if (capabilities & CHARM_CAPABILITY_INCIDENT_RESPONSE) {
+            printf("     - Incident Response ✅\n");
+        }
+        if (capabilities & CHARM_CAPABILITY_LIFECYCLE_SECURITY) {
+            printf("     - Lifecycle Security ✅\n");
         }
     }
     printf("\n");
