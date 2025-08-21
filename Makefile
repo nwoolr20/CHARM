@@ -94,6 +94,11 @@ small: $(BUILD_DIR)/benchmark_small_inputs.o $(BUILD_DIR)/avx2_detect.o $(BUILD_
 	@echo "Building small inputs benchmark..."
 	$(CC) $(CFLAGS) -o $(SMALL_INPUTS_BENCH) $^ $(LDFLAGS)
 
+# Build CHARM-B (CHARMbit) benchmark
+charmb: $(BUILD_DIR)/benchmark_charmb.o $(BUILD_DIR)/charmb_core.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o
+	@echo "Building CHARM-B (CHARMbit) benchmark..."
+	$(CC) $(CFLAGS) -o $(BUILD_DIR)/benchmark_charmb $^ $(LDFLAGS)
+
 # Build full system
 full: $(LIB_STATIC) $(CHARM_BIN) $(BENCH_BIN)
 
@@ -239,6 +244,7 @@ help:
 	@echo "  third_party_blake3 - Build BLAKE3 library for benchmarking"
 	@echo "  enhanced  - Build enhanced comprehensive benchmark"
 	@echo "  small     - Build small inputs benchmark (64B, 256B, 1KB)"
+	@echo "  charmb    - Build CHARM-B (CHARMbit) ultra-small inputs benchmark (≤64B)"
 	@echo "  test      - Run test suite"
 	@echo "  benchmark - Run performance benchmarks"
 	@echo "  docs      - Generate/show documentation"
