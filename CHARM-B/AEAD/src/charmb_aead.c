@@ -275,8 +275,8 @@ static charmb_aead_status_t generate_keystream(
 }
 
 /**
- * @brief Fast CHARM-B AEAD Encryption for small payloads (≤64 bytes)
- * Uses optimized single-hash key derivation and direct tag computation
+ * @brief Ultra-fast CHARM-B AEAD Encryption for small payloads (≤64 bytes)
+ * Uses single-hash combined key/keystream generation for maximum performance
  */
 static charmb_aead_status_t charmb_aead_encrypt_fast(
     const uint8_t key[CHARMB_AEAD_KEY_SIZE],
@@ -286,60 +286,74 @@ static charmb_aead_status_t charmb_aead_encrypt_fast(
     uint8_t* ciphertext,
     uint8_t tag[CHARMB_AEAD_TAG_SIZE]
 ) {
-    // Single hash operation for key derivation: CHARM-B(key || nonce || "FAST")
-    uint8_t kdf_input[48]; // 32 + 12 + 4
-    memcpy(kdf_input, key, 32);
-    memcpy(kdf_input + 32, nonce, 12);
-    memcpy(kdf_input + 44, "FAST", 4);
+    // ULTRA-FAST: Single hash operation generates both keystream and auth key
+    // Input: key || nonce || payload_len || "AEAD"
+    uint8_t combined_input[52]; // 32 + 12 + 4 + 4  
+    memcpy(combined_input, key, 32);
+    memcpy(combined_input + 32, nonce, 12);
     
-    uint8_t keys[32];
-    charmb_status_t status = charmb_hash(kdf_input, 48, keys, CHARMB_DIGEST_256);
-    if (status != CHARMB_SUCCESS) return CHARMB_AEAD_ERROR_NULL_POINTER;
+    // Encode payload length for domain separation
+    combined_input[44] = (uint8_t)(plaintext_len & 0xFF);
+    combined_input[45] = (uint8_t)((plaintext_len >> 8) & 0xFF);
+    combined_input[46] = (uint8_t)(aad_len & 0xFF);
+    combined_input[47] = (uint8_t)((aad_len >> 8) & 0xFF);
     
-    // Generate keystream for encryption: CHARM-B(keys || nonce || counter)
-    uint8_t keystream_input[48];
-    memcpy(keystream_input, keys, 32);
-    memcpy(keystream_input + 32, nonce, 12);
-    // Counter = 1 for encryption
-    keystream_input[44] = 0x01;
-    keystream_input[45] = 0x00;
-    keystream_input[46] = 0x00;
-    keystream_input[47] = 0x00;
+    // Domain separator
+    memcpy(combined_input + 48, "AEAD", 4);
     
-    uint8_t keystream[64]; // Enough for up to 64 bytes
-    status = charmb_hash(keystream_input, 48, keystream, CHARMB_DIGEST_256);
+    // Single hash operation produces 32-byte output used for both keystream and auth
+    uint8_t master_output[32];
+    charmb_status_t status = charmb_hash(combined_input, 52, master_output, CHARMB_DIGEST_256);
     if (status != CHARMB_SUCCESS) {
-        secure_clear(keys, sizeof(keys));
-        secure_clear(keystream_input, sizeof(keystream_input));
+        secure_clear(combined_input, sizeof(combined_input));
         return CHARMB_AEAD_ERROR_NULL_POINTER;
     }
     
-    // If we need more than 32 bytes of keystream, generate another block
-    if (plaintext_len > 32) {
-        // Counter = 2 for second block
-        keystream_input[44] = 0x02;
-        uint8_t keystream2[32];
-        status = charmb_hash(keystream_input, 48, keystream2, CHARMB_DIGEST_256);
+    // For payloads > 32 bytes, we need one more hash for extended keystream
+    uint8_t extended_keystream[32];
+    bool need_extended = plaintext_len > 32;
+    
+    if (need_extended) {
+        // Use master output as key for second keystream block
+        uint8_t extend_input[48];
+        memcpy(extend_input, master_output, 32);
+        memcpy(extend_input + 32, nonce, 12);
+        // Use counter = 1 for second block
+        extend_input[44] = 0x01;
+        extend_input[45] = 0x00;
+        extend_input[46] = 0x00;
+        extend_input[47] = 0x00;
+        
+        status = charmb_hash(extend_input, 48, extended_keystream, CHARMB_DIGEST_256);
+        secure_clear(extend_input, sizeof(extend_input));
         if (status != CHARMB_SUCCESS) {
-            secure_clear(keys, sizeof(keys));
-            secure_clear(keystream_input, sizeof(keystream_input));
-            secure_clear(keystream, 32);
+            secure_clear(combined_input, sizeof(combined_input));
+            secure_clear(master_output, sizeof(master_output));
             return CHARMB_AEAD_ERROR_NULL_POINTER;
         }
-        memcpy(keystream + 32, keystream2, 32);
-        secure_clear(keystream2, sizeof(keystream2));
     }
     
-    // Encrypt: XOR with keystream (SIMD-optimized)
-    xor_buffers_optimized(plaintext, keystream, ciphertext, plaintext_len);
+    // Encrypt with direct keystream from master output
+    if (plaintext_len <= 32) {
+        // Single block encryption (SIMD-optimized)
+        xor_buffers_optimized(plaintext, master_output, ciphertext, plaintext_len);
+    } else {
+        // Dual block encryption  
+        xor_buffers_optimized(plaintext, master_output, ciphertext, 32);
+        xor_buffers_optimized(plaintext + 32, extended_keystream, ciphertext + 32, plaintext_len - 32);
+    }
     
-    // Compute authentication tag: CHARM-B(keys || aad || ciphertext || len)
-    uint8_t auth_input[128]; // Should be enough for small payloads
+    // Ultra-fast authentication: Simplified tag = CHARM-B(auth_key || aad || ciphertext)
+    // Use last 16 bytes of master output as auth key for efficiency
+    const uint8_t* auth_key = master_output + 16;
+    
+    // Build compact authentication input
+    uint8_t auth_input[112]; // 16 (auth_key) + 32 (aad_max) + 64 (ciphertext_max) 
     size_t auth_len = 0;
     
-    // Add keys as authentication key
-    memcpy(auth_input + auth_len, keys, 32);
-    auth_len += 32;
+    // Add 16-byte auth key
+    memcpy(auth_input + auth_len, auth_key, 16);
+    auth_len += 16;
     
     // Add AAD if present
     if (aad && aad_len > 0) {
@@ -351,26 +365,23 @@ static charmb_aead_status_t charmb_aead_encrypt_fast(
     memcpy(auth_input + auth_len, ciphertext, plaintext_len);
     auth_len += plaintext_len;
     
-    // Add length encoding
+    // Add length encoding for domain separation
     auth_input[auth_len++] = (uint8_t)(aad_len & 0xFF);
-    auth_input[auth_len++] = (uint8_t)((aad_len >> 8) & 0xFF);
     auth_input[auth_len++] = (uint8_t)(plaintext_len & 0xFF);
-    auth_input[auth_len++] = (uint8_t)((plaintext_len >> 8) & 0xFF);
     
+    // Single hash for authentication tag
     uint8_t full_tag[32];
     if (auth_len <= 64) {
-        // Single hash operation
+        // Optimal case: single hash operation
         status = charmb_hash(auth_input, auth_len, full_tag, CHARMB_DIGEST_256);
     } else {
-        // Two-stage hash for larger auth data
+        // Fallback: two-stage hash for larger auth data
         uint8_t temp_hash[32];
         status = charmb_hash(auth_input, 64, temp_hash, CHARMB_DIGEST_256);
         if (status == CHARMB_SUCCESS) {
-            // Combine temp_hash with remaining data
             uint8_t final_input[64];
             memcpy(final_input, temp_hash, 32);
-            size_t remaining = auth_len - 64;
-            if (remaining > 32) remaining = 32;
+            size_t remaining = (auth_len - 64 > 32) ? 32 : (auth_len - 64);
             memcpy(final_input + 32, auth_input + 64, remaining);
             status = charmb_hash(final_input, 32 + remaining, full_tag, CHARMB_DIGEST_256);
             secure_clear(final_input, sizeof(final_input));
@@ -379,9 +390,9 @@ static charmb_aead_status_t charmb_aead_encrypt_fast(
     }
     
     if (status != CHARMB_SUCCESS) {
-        secure_clear(keys, sizeof(keys));
-        secure_clear(keystream_input, sizeof(keystream_input));
-        secure_clear(keystream, sizeof(keystream));
+        secure_clear(combined_input, sizeof(combined_input));
+        secure_clear(master_output, sizeof(master_output));
+        if (need_extended) secure_clear(extended_keystream, sizeof(extended_keystream));
         secure_clear(auth_input, auth_len);
         return CHARMB_AEAD_ERROR_NULL_POINTER;
     }
@@ -390,9 +401,9 @@ static charmb_aead_status_t charmb_aead_encrypt_fast(
     memcpy(tag, full_tag, 16);
     
     // Clear sensitive data
-    secure_clear(keys, sizeof(keys));
-    secure_clear(keystream_input, sizeof(keystream_input));
-    secure_clear(keystream, sizeof(keystream));
+    secure_clear(combined_input, sizeof(combined_input));
+    secure_clear(master_output, sizeof(master_output));
+    if (need_extended) secure_clear(extended_keystream, sizeof(extended_keystream));
     secure_clear(auth_input, auth_len);
     secure_clear(full_tag, sizeof(full_tag));
     
@@ -418,7 +429,7 @@ charmb_aead_status_t charmb_aead_encrypt(
     }
     
     // Fast path for small payloads (≤64 bytes) - optimized AEAD mode
-    if (false && plaintext_len <= 64 && (aad_len == 0 || aad_len <= 32)) {
+    if (plaintext_len <= 64 && (aad_len == 0 || aad_len <= 32)) {
         return charmb_aead_encrypt_fast(key, nonce, aad, aad_len, plaintext, plaintext_len, ciphertext, tag);
     }
     
@@ -502,8 +513,8 @@ charmb_aead_status_t charmb_aead_encrypt(
 }
 
 /**
- * @brief Fast CHARM-B AEAD Decryption for small payloads (≤64 bytes)
- * Uses optimized single-hash key derivation and direct tag verification
+ * @brief Ultra-fast CHARM-B AEAD Decryption for small payloads (≤64 bytes)
+ * Uses single-hash combined key/keystream generation matching encryption
  */
 static charmb_aead_status_t charmb_aead_decrypt_fast(
     const uint8_t key[CHARMB_AEAD_KEY_SIZE],
@@ -513,24 +524,58 @@ static charmb_aead_status_t charmb_aead_decrypt_fast(
     const uint8_t tag[CHARMB_AEAD_TAG_SIZE],
     uint8_t* plaintext
 ) {
-    // Single hash operation for key derivation: CHARM-B(key || nonce || "FAST")
-    uint8_t kdf_input[48]; // 32 + 12 + 4
-    memcpy(kdf_input, key, 32);
-    memcpy(kdf_input + 32, nonce, 12);
-    memcpy(kdf_input + 44, "FAST", 4);
+    // ULTRA-FAST: Single hash operation generates both keystream and auth key (same as encrypt)
+    uint8_t combined_input[52]; // 32 + 12 + 4 + 4  
+    memcpy(combined_input, key, 32);
+    memcpy(combined_input + 32, nonce, 12);
     
-    uint8_t keys[32];
-    charmb_status_t status = charmb_hash(kdf_input, 48, keys, CHARMB_DIGEST_256);
-    if (status != CHARMB_SUCCESS) return CHARMB_AEAD_ERROR_NULL_POINTER;
+    // Encode payload length for domain separation (same as encrypt)
+    combined_input[44] = (uint8_t)(ciphertext_len & 0xFF);
+    combined_input[45] = (uint8_t)((ciphertext_len >> 8) & 0xFF);
+    combined_input[46] = (uint8_t)(aad_len & 0xFF);
+    combined_input[47] = (uint8_t)((aad_len >> 8) & 0xFF);
     
-    // Verify authentication tag first
-    // Compute authentication tag: CHARM-B(keys || aad || ciphertext || len)
-    uint8_t auth_input[128]; // Should be enough for small payloads
+    // Domain separator
+    memcpy(combined_input + 48, "AEAD", 4);
+    
+    // Single hash operation produces 32-byte output used for both keystream and auth
+    uint8_t master_output[32];
+    charmb_status_t status = charmb_hash(combined_input, 52, master_output, CHARMB_DIGEST_256);
+    if (status != CHARMB_SUCCESS) {
+        secure_clear(combined_input, sizeof(combined_input));
+        return CHARMB_AEAD_ERROR_NULL_POINTER;
+    }
+    
+    // For payloads > 32 bytes, we need one more hash for extended keystream
+    uint8_t extended_keystream[32];
+    bool need_extended = ciphertext_len > 32;
+    
+    if (need_extended) {
+        uint8_t extend_input[48];
+        memcpy(extend_input, master_output, 32);
+        memcpy(extend_input + 32, nonce, 12);
+        extend_input[44] = 0x01;
+        extend_input[45] = 0x00;
+        extend_input[46] = 0x00;
+        extend_input[47] = 0x00;
+        
+        status = charmb_hash(extend_input, 48, extended_keystream, CHARMB_DIGEST_256);
+        secure_clear(extend_input, sizeof(extend_input));
+        if (status != CHARMB_SUCCESS) {
+            secure_clear(combined_input, sizeof(combined_input));
+            secure_clear(master_output, sizeof(master_output));
+            return CHARMB_AEAD_ERROR_NULL_POINTER;
+        }
+    }
+    
+    // Verify authentication tag FIRST (authenticate before decrypt)
+    const uint8_t* auth_key = master_output + 16;
+    uint8_t auth_input[112]; // 16 + 32 + 64 max
     size_t auth_len = 0;
     
-    // Add keys as authentication key
-    memcpy(auth_input + auth_len, keys, 32);
-    auth_len += 32;
+    // Add 16-byte auth key
+    memcpy(auth_input + auth_len, auth_key, 16);
+    auth_len += 16;
     
     // Add AAD if present
     if (aad && aad_len > 0) {
@@ -542,26 +587,21 @@ static charmb_aead_status_t charmb_aead_decrypt_fast(
     memcpy(auth_input + auth_len, ciphertext, ciphertext_len);
     auth_len += ciphertext_len;
     
-    // Add length encoding
+    // Add length encoding for domain separation
     auth_input[auth_len++] = (uint8_t)(aad_len & 0xFF);
-    auth_input[auth_len++] = (uint8_t)((aad_len >> 8) & 0xFF);
     auth_input[auth_len++] = (uint8_t)(ciphertext_len & 0xFF);
-    auth_input[auth_len++] = (uint8_t)((ciphertext_len >> 8) & 0xFF);
     
+    // Compute authentication tag
     uint8_t computed_tag[32];
     if (auth_len <= 64) {
-        // Single hash operation
         status = charmb_hash(auth_input, auth_len, computed_tag, CHARMB_DIGEST_256);
     } else {
-        // Two-stage hash for larger auth data
         uint8_t temp_hash[32];
         status = charmb_hash(auth_input, 64, temp_hash, CHARMB_DIGEST_256);
         if (status == CHARMB_SUCCESS) {
-            // Combine temp_hash with remaining data
             uint8_t final_input[64];
             memcpy(final_input, temp_hash, 32);
-            size_t remaining = auth_len - 64;
-            if (remaining > 32) remaining = 32;
+            size_t remaining = (auth_len - 64 > 32) ? 32 : (auth_len - 64);
             memcpy(final_input + 32, auth_input + 64, remaining);
             status = charmb_hash(final_input, 32 + remaining, computed_tag, CHARMB_DIGEST_256);
             secure_clear(final_input, sizeof(final_input));
@@ -570,7 +610,9 @@ static charmb_aead_status_t charmb_aead_decrypt_fast(
     }
     
     if (status != CHARMB_SUCCESS) {
-        secure_clear(keys, sizeof(keys));
+        secure_clear(combined_input, sizeof(combined_input));
+        secure_clear(master_output, sizeof(master_output));
+        if (need_extended) secure_clear(extended_keystream, sizeof(extended_keystream));
         secure_clear(auth_input, auth_len);
         return CHARMB_AEAD_ERROR_NULL_POINTER;
     }
@@ -581,55 +623,32 @@ static charmb_aead_status_t charmb_aead_decrypt_fast(
         tag_match |= tag[i] ^ computed_tag[i];
     }
     
-    secure_clear(computed_tag, sizeof(computed_tag));
-    secure_clear(auth_input, auth_len);
-    
     if (tag_match != 0) {
-        secure_clear(keys, sizeof(keys));
+        // Authentication failure - clear everything and return error
+        secure_clear(combined_input, sizeof(combined_input));
+        secure_clear(master_output, sizeof(master_output));
+        if (need_extended) secure_clear(extended_keystream, sizeof(extended_keystream));
+        secure_clear(auth_input, auth_len);
+        secure_clear(computed_tag, sizeof(computed_tag));
         return CHARMB_AEAD_ERROR_AUTH_FAILED;
     }
     
-    // Generate keystream for decryption: CHARM-B(keys || nonce || counter)
-    uint8_t keystream_input[48];
-    memcpy(keystream_input, keys, 32);
-    memcpy(keystream_input + 32, nonce, 12);
-    // Counter = 1 for encryption
-    keystream_input[44] = 0x01;
-    keystream_input[45] = 0x00;
-    keystream_input[46] = 0x00;
-    keystream_input[47] = 0x00;
-    
-    uint8_t keystream[64]; // Enough for up to 64 bytes
-    status = charmb_hash(keystream_input, 48, keystream, CHARMB_DIGEST_256);
-    if (status != CHARMB_SUCCESS) {
-        secure_clear(keys, sizeof(keys));
-        secure_clear(keystream_input, sizeof(keystream_input));
-        return CHARMB_AEAD_ERROR_NULL_POINTER;
+    // Authentication successful - decrypt the ciphertext
+    if (ciphertext_len <= 32) {
+        // Single block decryption (SIMD-optimized)
+        xor_buffers_optimized(ciphertext, master_output, plaintext, ciphertext_len);
+    } else {
+        // Dual block decryption
+        xor_buffers_optimized(ciphertext, master_output, plaintext, 32);
+        xor_buffers_optimized(ciphertext + 32, extended_keystream, plaintext + 32, ciphertext_len - 32);
     }
-    
-    // If we need more than 32 bytes of keystream, generate another block
-    if (ciphertext_len > 32) {
-        // Counter = 2 for second block
-        keystream_input[44] = 0x02;
-        uint8_t keystream2[32];
-        status = charmb_hash(keystream_input, 48, keystream2, CHARMB_DIGEST_256);
-        if (status != CHARMB_SUCCESS) {
-            secure_clear(keys, sizeof(keys));
-            secure_clear(keystream_input, sizeof(keystream_input));
-            secure_clear(keystream, 32);
-            return CHARMB_AEAD_ERROR_NULL_POINTER;
-        }
-        memcpy(keystream + 32, keystream2, 32);
-        secure_clear(keystream2, sizeof(keystream2));
-    }
-    
-    // Decrypt: XOR with keystream (SIMD-optimized)
-    xor_buffers_optimized(ciphertext, keystream, plaintext, ciphertext_len);
     
     // Clear sensitive data
-    secure_clear(keys, sizeof(keys));
-    secure_clear(keystream_input, sizeof(keystream_input));
-    secure_clear(keystream, sizeof(keystream));
+    secure_clear(combined_input, sizeof(combined_input));
+    secure_clear(master_output, sizeof(master_output));
+    if (need_extended) secure_clear(extended_keystream, sizeof(extended_keystream));
+    secure_clear(auth_input, auth_len);
+    secure_clear(computed_tag, sizeof(computed_tag));
     
     return CHARMB_AEAD_SUCCESS;
 }
@@ -653,7 +672,7 @@ charmb_aead_status_t charmb_aead_decrypt(
     }
     
     // Fast path for small payloads (≤64 bytes) - optimized AEAD mode  
-    if (false && ciphertext_len <= 64 && (aad_len == 0 || aad_len <= 32)) {
+    if (ciphertext_len <= 64 && (aad_len == 0 || aad_len <= 32)) {
         return charmb_aead_decrypt_fast(key, nonce, aad, aad_len, ciphertext, ciphertext_len, tag, plaintext);
     }
     
