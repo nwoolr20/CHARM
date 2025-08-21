@@ -5,11 +5,13 @@
 TOPDIR = ../..
 CHARM_INCLUDE = $(TOPDIR)/algorithm/include
 CHARM_SRC = $(TOPDIR)/algorithm/src
+ECE_INCLUDE = $(TOPDIR)/include
+ECE_SRC = $(TOPDIR)/src/core
 
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -O2 -g
-INCLUDES = -Iinclude -I$(CHARM_INCLUDE)
+CFLAGS = -Wall -Wextra -std=c11 -O3 -flto -ffast-math -funroll-loops -mavx2 -march=native -mtune=native -g
+INCLUDES = -Iinclude -I$(CHARM_INCLUDE) -I$(ECE_INCLUDE)
 LIBS = -lm
 
 # OpenSSL support (optional)
@@ -26,11 +28,13 @@ endif
 # Source files
 AEAS_SOURCES = src/util.c src/hmac_charm.c src/hkdf_charm.c src/poly1305.c src/aeas.c
 CHARM_SOURCES = $(CHARM_SRC)/charm_lib.c
+ECE_SOURCES = $(ECE_SRC)/ece_core.c $(ECE_SRC)/ece_digest.c $(ECE_SRC)/entropy_bus.c $(ECE_SRC)/system_entropy.c $(TOPDIR)/src/utils/avx2_detect.c
 
 # Object files
 AEAS_OBJECTS = $(AEAS_SOURCES:.c=.o)
 CHARM_OBJECTS = $(CHARM_SOURCES:.c=.o)
-ALL_OBJECTS = $(AEAS_OBJECTS) $(CHARM_OBJECTS)
+ECE_OBJECTS = $(ECE_SOURCES:.c=.o)
+ALL_OBJECTS = $(AEAS_OBJECTS) $(CHARM_OBJECTS) $(ECE_OBJECTS)
 
 # Targets
 LIBRARY = libaeas.a
