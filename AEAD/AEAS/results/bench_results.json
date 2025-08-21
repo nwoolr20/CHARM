@@ -7,15 +7,15 @@
       "algorithm": "CHARM-AEAS",
       "data_size": 64,
       "aad_size": 0,
-      "throughput_mbps": 13336.09,
-      "avg_time_us": 91.53,
+      "throughput_mbps": 13340.29,
+      "avg_time_us": 91.50,
       "iterations": 10000
     },
     {
       "algorithm": "AES-256-GCM",
       "data_size": 64,
       "aad_size": 0,
-      "throughput_mbps": 581924.55,
+      "throughput_mbps": 581093.50,
       "avg_time_us": 2.10,
       "iterations": 10000
     },
@@ -23,55 +23,55 @@
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 64,
       "aad_size": 0,
-      "throughput_mbps": 547449.60,
-      "avg_time_us": 2.23,
+      "throughput_mbps": 554612.96,
+      "avg_time_us": 2.20,
       "iterations": 10000
     },
     {
       "algorithm": "CHARM-AEAS",
       "data_size": 64,
       "aad_size": 16,
-      "throughput_mbps": 13337.53,
-      "avg_time_us": 91.52,
+      "throughput_mbps": 13344.45,
+      "avg_time_us": 91.48,
       "iterations": 10000
     },
     {
       "algorithm": "AES-256-GCM",
       "data_size": 64,
       "aad_size": 16,
-      "throughput_mbps": 607012.99,
-      "avg_time_us": 2.01,
+      "throughput_mbps": 612003.97,
+      "avg_time_us": 1.99,
       "iterations": 10000
     },
     {
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 64,
       "aad_size": 16,
-      "throughput_mbps": 549668.19,
-      "avg_time_us": 2.22,
+      "throughput_mbps": 552229.42,
+      "avg_time_us": 2.21,
       "iterations": 10000
     },
     {
       "algorithm": "CHARM-AEAS",
       "data_size": 256,
       "aad_size": 0,
-      "throughput_mbps": 14345.08,
-      "avg_time_us": 170.19,
+      "throughput_mbps": 14346.50,
+      "avg_time_us": 170.17,
       "iterations": 5000
     },
     {
       "algorithm": "AES-256-GCM",
       "data_size": 256,
       "aad_size": 0,
-      "throughput_mbps": 1160805.56,
-      "avg_time_us": 2.10,
+      "throughput_mbps": 1170040.38,
+      "avg_time_us": 2.09,
       "iterations": 5000
     },
     {
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 256,
       "aad_size": 0,
-      "throughput_mbps": 996573.70,
+      "throughput_mbps": 995760.77,
       "avg_time_us": 2.45,
       "iterations": 5000
     },
@@ -79,63 +79,63 @@
       "algorithm": "CHARM-AEAS",
       "data_size": 256,
       "aad_size": 16,
-      "throughput_mbps": 14315.00,
-      "avg_time_us": 170.55,
+      "throughput_mbps": 14346.60,
+      "avg_time_us": 170.17,
       "iterations": 5000
     },
     {
       "algorithm": "AES-256-GCM",
       "data_size": 256,
       "aad_size": 16,
-      "throughput_mbps": 1146200.12,
-      "avg_time_us": 2.13,
+      "throughput_mbps": 1149437.97,
+      "avg_time_us": 2.12,
       "iterations": 5000
     },
     {
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 256,
       "aad_size": 16,
-      "throughput_mbps": 980405.69,
+      "throughput_mbps": 959370.58,
+      "avg_time_us": 2.54,
+      "iterations": 5000
+    },
+    {
+      "algorithm": "CHARM-AEAS",
+      "data_size": 1024,
+      "aad_size": 0,
+      "throughput_mbps": 8030.14,
+      "avg_time_us": 486.45,
+      "iterations": 2000
+    },
+    {
+      "algorithm": "AES-256-GCM",
+      "data_size": 1024,
+      "aad_size": 0,
+      "throughput_mbps": 1569405.38,
       "avg_time_us": 2.49,
-      "iterations": 5000
-    },
-    {
-      "algorithm": "CHARM-AEAS",
-      "data_size": 1024,
-      "aad_size": 0,
-      "throughput_mbps": 7979.58,
-      "avg_time_us": 489.53,
-      "iterations": 2000
-    },
-    {
-      "algorithm": "AES-256-GCM",
-      "data_size": 1024,
-      "aad_size": 0,
-      "throughput_mbps": 1562500.00,
-      "avg_time_us": 2.50,
       "iterations": 2000
     },
     {
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 1024,
       "aad_size": 0,
-      "throughput_mbps": 1306438.13,
-      "avg_time_us": 2.99,
+      "throughput_mbps": 1293032.11,
+      "avg_time_us": 3.02,
       "iterations": 2000
     },
     {
       "algorithm": "CHARM-AEAS",
       "data_size": 1024,
       "aad_size": 64,
-      "throughput_mbps": 7997.55,
-      "avg_time_us": 488.43,
+      "throughput_mbps": 8020.85,
+      "avg_time_us": 487.01,
       "iterations": 2000
     },
     {
       "algorithm": "AES-256-GCM",
       "data_size": 1024,
       "aad_size": 64,
-      "throughput_mbps": 1531562.44,
+      "throughput_mbps": 1530062.67,
       "avg_time_us": 2.55,
       "iterations": 2000
     },
@@ -143,71 +143,71 @@
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 1024,
       "aad_size": 64,
-      "throughput_mbps": 1256432.94,
-      "avg_time_us": 3.11,
+      "throughput_mbps": 1276760.91,
+      "avg_time_us": 3.06,
       "iterations": 2000
     },
     {
       "algorithm": "CHARM-AEAS",
       "data_size": 4096,
       "aad_size": 0,
-      "throughput_mbps": 4432.36,
-      "avg_time_us": 1762.61,
+      "throughput_mbps": 4442.18,
+      "avg_time_us": 1758.71,
       "iterations": 1000
     },
     {
       "algorithm": "AES-256-GCM",
       "data_size": 4096,
       "aad_size": 0,
-      "throughput_mbps": 1913890.25,
-      "avg_time_us": 4.08,
+      "throughput_mbps": 1929965.42,
+      "avg_time_us": 4.05,
       "iterations": 1000
     },
     {
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 4096,
       "aad_size": 0,
-      "throughput_mbps": 1348610.39,
-      "avg_time_us": 5.79,
+      "throughput_mbps": 1345590.77,
+      "avg_time_us": 5.81,
       "iterations": 1000
     },
     {
       "algorithm": "CHARM-AEAS",
       "data_size": 4096,
       "aad_size": 64,
-      "throughput_mbps": 4443.88,
-      "avg_time_us": 1758.04,
+      "throughput_mbps": 4448.52,
+      "avg_time_us": 1756.20,
       "iterations": 1000
     },
     {
       "algorithm": "AES-256-GCM",
       "data_size": 4096,
       "aad_size": 64,
-      "throughput_mbps": 1906417.76,
-      "avg_time_us": 4.10,
+      "throughput_mbps": 1910613.84,
+      "avg_time_us": 4.09,
       "iterations": 1000
     },
     {
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 4096,
       "aad_size": 64,
-      "throughput_mbps": 1337985.96,
-      "avg_time_us": 5.84,
+      "throughput_mbps": 1339821.64,
+      "avg_time_us": 5.83,
       "iterations": 1000
     },
     {
       "algorithm": "CHARM-AEAS",
       "data_size": 16384,
       "aad_size": 0,
-      "throughput_mbps": 2276.80,
-      "avg_time_us": 6862.69,
+      "throughput_mbps": 2285.25,
+      "avg_time_us": 6837.32,
       "iterations": 500
     },
     {
       "algorithm": "AES-256-GCM",
       "data_size": 16384,
       "aad_size": 0,
-      "throughput_mbps": 1516695.79,
+      "throughput_mbps": 1516401.40,
       "avg_time_us": 10.30,
       "iterations": 500
     },
@@ -215,7 +215,7 @@
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 16384,
       "aad_size": 0,
-      "throughput_mbps": 913635.83,
+      "throughput_mbps": 913849.57,
       "avg_time_us": 17.10,
       "iterations": 500
     },
@@ -223,120 +223,120 @@
       "algorithm": "CHARM-AEAS",
       "data_size": 16384,
       "aad_size": 64,
-      "throughput_mbps": 2273.18,
-      "avg_time_us": 6873.64,
+      "throughput_mbps": 2285.06,
+      "avg_time_us": 6837.88,
       "iterations": 500
     },
     {
       "algorithm": "AES-256-GCM",
       "data_size": 16384,
       "aad_size": 64,
-      "throughput_mbps": 1505878.95,
-      "avg_time_us": 10.38,
+      "throughput_mbps": 1507913.53,
+      "avg_time_us": 10.36,
       "iterations": 500
     },
     {
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 16384,
       "aad_size": 64,
-      "throughput_mbps": 911503.91,
-      "avg_time_us": 17.14,
+      "throughput_mbps": 907585.97,
+      "avg_time_us": 17.22,
       "iterations": 500
     },
     {
       "algorithm": "CHARM-AEAS",
       "data_size": 65536,
       "aad_size": 0,
-      "throughput_mbps": 918.87,
-      "avg_time_us": 27207.21,
+      "throughput_mbps": 919.99,
+      "avg_time_us": 27174.22,
       "iterations": 200
     },
     {
       "algorithm": "AES-256-GCM",
       "data_size": 65536,
       "aad_size": 0,
-      "throughput_mbps": 712555.22,
-      "avg_time_us": 35.09,
+      "throughput_mbps": 709823.96,
+      "avg_time_us": 35.22,
       "iterations": 200
     },
     {
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 65536,
       "aad_size": 0,
-      "throughput_mbps": 405679.51,
-      "avg_time_us": 61.62,
+      "throughput_mbps": 404334.47,
+      "avg_time_us": 61.83,
       "iterations": 200
     },
     {
       "algorithm": "CHARM-AEAS",
       "data_size": 65536,
       "aad_size": 64,
-      "throughput_mbps": 919.27,
-      "avg_time_us": 27195.61,
+      "throughput_mbps": 920.88,
+      "avg_time_us": 27147.97,
       "iterations": 200
     },
     {
       "algorithm": "AES-256-GCM",
       "data_size": 65536,
       "aad_size": 64,
-      "throughput_mbps": 708415.98,
-      "avg_time_us": 35.29,
+      "throughput_mbps": 712250.71,
+      "avg_time_us": 35.10,
       "iterations": 200
     },
     {
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 65536,
       "aad_size": 64,
-      "throughput_mbps": 404007.76,
-      "avg_time_us": 61.88,
+      "throughput_mbps": 404563.48,
+      "avg_time_us": 61.80,
       "iterations": 200
     },
     {
       "algorithm": "CHARM-AEAS",
       "data_size": 1048576,
       "aad_size": 0,
-      "throughput_mbps": 229.94,
-      "avg_time_us": 434903.18,
+      "throughput_mbps": 230.16,
+      "avg_time_us": 434489.16,
       "iterations": 50
     },
     {
       "algorithm": "AES-256-GCM",
       "data_size": 1048576,
       "aad_size": 0,
-      "throughput_mbps": 182235.67,
-      "avg_time_us": 548.74,
+      "throughput_mbps": 182242.31,
+      "avg_time_us": 548.72,
       "iterations": 50
     },
     {
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 1048576,
       "aad_size": 0,
-      "throughput_mbps": 102844.68,
-      "avg_time_us": 972.34,
+      "throughput_mbps": 102543.07,
+      "avg_time_us": 975.20,
       "iterations": 50
     },
     {
       "algorithm": "CHARM-AEAS",
       "data_size": 1048576,
       "aad_size": 64,
-      "throughput_mbps": 230.05,
-      "avg_time_us": 434682.06,
+      "throughput_mbps": 230.21,
+      "avg_time_us": 434380.26,
       "iterations": 50
     },
     {
       "algorithm": "AES-256-GCM",
       "data_size": 1048576,
       "aad_size": 64,
-      "throughput_mbps": 182195.82,
-      "avg_time_us": 548.86,
+      "throughput_mbps": 182209.10,
+      "avg_time_us": 548.82,
       "iterations": 50
     },
     {
       "algorithm": "ChaCha20-Poly1305",
       "data_size": 1048576,
       "aad_size": 64,
-      "throughput_mbps": 102791.83,
-      "avg_time_us": 972.84,
+      "throughput_mbps": 102656.76,
+      "avg_time_us": 974.12,
       "iterations": 50
     }
   ]
