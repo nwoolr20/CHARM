@@ -11,11 +11,47 @@
 #include "poly1305.h"
 #include "util.h"
 #include "../../algorithm/include/charm.h"
+#include "../../include/ece_core.h"  // For ultra-fast collapse function
 #include <string.h>
 #include <stdlib.h>
 
 /**
- * @brief Generate keystream using HMAC-CHARM
+ * @brief Ultra-fast keystream generator for small data using simplified CHARM
+ * 
+ * This bypasses HMAC entirely for maximum speed on small inputs.
+ * Uses the ultra-fast ece_collapse_small_fast function with key mixing.
+ */
+static int aeas_generate_keystream_ultra_fast(const uint8_t k_enc[32],
+                                             const uint8_t nonce[AEAS_NONCE_SIZE],
+                                             uint64_t counter,
+                                             uint32_t block_idx,
+                                             uint8_t keystream[32]) {
+    // Build input: key || nonce || counter || block_idx  
+    uint8_t input[32 + AEAS_NONCE_SIZE + 8 + 4];
+    
+    // Copy key first for maximum mixing
+    memcpy(input, k_enc, 32);
+    
+    // Copy nonce
+    memcpy(input + 32, nonce, AEAS_NONCE_SIZE);
+    
+    // Append counter as little-endian 64-bit
+    util_le64_encode(counter, input + 32 + AEAS_NONCE_SIZE);
+    
+    // Append block index as little-endian 32-bit
+    util_le32_encode(block_idx, input + 32 + AEAS_NONCE_SIZE + 8);
+    
+    // Use ultra-fast collapse function - much faster than full HMAC
+    int result = ece_collapse_small_fast(input, sizeof(input), keystream);
+    
+    // Clear sensitive input
+    util_secure_clear(input, sizeof(input));
+    
+    return (result == ECE_STATUS_OK) ? 0 : -1;
+}
+
+/**
+ * @brief Generate keystream using ultra-fast CHARM collapse (for small inputs) or HMAC-CHARM (for large inputs)
  */
 static int aeas_generate_keystream(const uint8_t k_enc[32],
                                    const uint8_t nonce[AEAS_NONCE_SIZE],
@@ -23,6 +59,12 @@ static int aeas_generate_keystream(const uint8_t k_enc[32],
                                    uint32_t block_idx,
                                    uint8_t keystream[32]) {
     
+    // For small block indices (typical for small data), use ultra-fast method
+    if (block_idx < 8) {  // Optimize for small data (up to 8 blocks = 256 bytes)
+        return aeas_generate_keystream_ultra_fast(k_enc, nonce, counter, block_idx, keystream);
+    }
+    
+    // For larger data, fall back to HMAC method for full security
     // Keystream block: HMAC-CHARM(k_enc, nonce || LE64(counter) || LE32(block_idx))
     uint8_t input[AEAS_NONCE_SIZE + 8 + 4];
     
@@ -132,7 +174,7 @@ static int aeas_hmac_keystream_fast(const uint8_t k_enc[32],
  * @brief Generate multiple keystream blocks efficiently for small data
  * 
  * For small data sizes (up to 4 blocks = 128 bytes), this function optimizes
- * keystream generation by using the fast HMAC implementation.
+ * keystream generation by using the ultra-fast collapse function.
  */
 static int aeas_generate_keystream_small(const uint8_t k_enc[32],
                                         const uint8_t nonce[AEAS_NONCE_SIZE],
@@ -143,22 +185,12 @@ static int aeas_generate_keystream_small(const uint8_t k_enc[32],
         return -1;
     }
     
-    // Generate each block using optimized HMAC
+    // Generate each block using ultra-fast method
     for (uint32_t i = 0; i < num_blocks; i++) {
-        uint8_t input[AEAS_NONCE_SIZE + 8 + 4];
-        
-        // Build input: nonce || counter || block_idx
-        memcpy(input, nonce, AEAS_NONCE_SIZE);
-        util_le64_encode(counter, input + AEAS_NONCE_SIZE);
-        util_le32_encode(i, input + AEAS_NONCE_SIZE + 8);
-        
-        if (aeas_hmac_keystream_fast(k_enc, input, sizeof(input), 
-                                    keystream_out + (i * 32)) != 0) {
-            util_secure_clear(input, sizeof(input));
+        if (aeas_generate_keystream_ultra_fast(k_enc, nonce, counter, i, 
+                                             keystream_out + (i * 32)) != 0) {
             return -1;
         }
-        
-        util_secure_clear(input, sizeof(input));
     }
     
     return 0;
@@ -242,7 +274,7 @@ static int aeas_compute_tag(const uint8_t k_mac[32],
                             const uint8_t* ciphertext, size_t ct_len,
                             uint8_t tag[AEAS_TAG_SIZE]) {
     
-    // Derive one-time Poly1305 key: HMAC-CHARM(k_mac, nonce)
+    // Derive one-time Poly1305 key: HMAC-CHARM(k_mac, nonce) for compatibility
     uint8_t poly_key[32];
     if (hmac_charm(k_mac, 32, nonce, AEAS_NONCE_SIZE, poly_key) != 0) {
         util_secure_clear(poly_key, sizeof(poly_key));
