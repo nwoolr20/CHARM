@@ -1,0 +1,23 @@
+Poly1305 Implementation License
+===============================
+
+The Poly1305 implementation in this project (src/poly1305.c and include/poly1305.h)
+is based on the public domain specification in RFC 7539 and follows established
+constant-time implementation techniques from the cryptographic community.
+
+Key References:
+- RFC 7539: ChaCha20 and Poly1305 for IETF Protocols
+- Poly1305-AES: a state-of-the-art message-authentication code (Daniel J. Bernstein)
+- Various public domain and MIT-licensed implementations
+
+License Terms:
+This Poly1305 implementation is provided under the same license as the main CHARM
+project. The algorithm itself is public domain, and our implementation follows
+standard constant-time techniques that are widely published and used.
+
+No patent claims are made on the Poly1305 algorithm or its implementation techniques.
+The algorithm was designed by Daniel J. Bernstein and is patent-free.
+
+Attribution:
+While not required, attribution to RFC 7539 and Daniel J. Bernstein's original
+work is appreciated when using this implementation.
