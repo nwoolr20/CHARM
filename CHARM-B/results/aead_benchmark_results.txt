@@ -1,0 +1,10 @@
+CHARM-B AEAD Comprehensive Benchmark Suite
+===========================================
+Configuration: 5000 iterations with 500 warmup runs
+Target: Ultra-small payloads optimized AEAD
+CHARM-B AEAD Functionality Test
+================================
+
+Testing encryption...
+❌ Encryption failed with status -1
+❌ Functionality tests failed!
