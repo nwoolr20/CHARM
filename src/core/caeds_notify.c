@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#define _GNU_SOURCE
 #include <time.h>
 #include <sys/time.h>
 #include <pthread.h>
@@ -456,5 +457,29 @@ charm_status_t caeds_notify_shutdown(caeds_notify_context_t* context) {
     pthread_mutex_lock(&internal_context->queue.mutex);
     internal_context->queue.running = 0;
     pthread_cond_signal(&internal_context->queue.cond);
-    pthread_mutex_unlock(&internal_c
-(Content truncated due to size limit. Use line ranges to read in chunks)
+    pthread_mutex_unlock(&internal_context->queue.mutex);
+    
+    // Wait for processing thread to finish
+    if (internal_context->queue.thread) {
+        pthread_join(internal_context->queue.thread, NULL);
+    }
+    
+    // Free any remaining queue entries
+    while (internal_context->queue.head) {
+        caeds_notify_queue_entry_t* entry = internal_context->queue.head;
+        internal_context->queue.head = entry->next;
+        free(entry);
+    }
+    
+    // Clean up
+    pthread_mutex_destroy(&internal_context->queue.mutex);
+    pthread_cond_destroy(&internal_context->queue.cond);
+    
+    if (internal_context->public.log_file) {
+        free((void*)internal_context->public.log_file);
+    }
+    
+    free(internal_context);
+    
+    return CHARM_STATUS_SUCCESS;
+}

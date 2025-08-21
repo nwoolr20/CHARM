@@ -33,14 +33,26 @@ INCLUDES = -I$(INCLUDE_DIR) -Ithird_party/crypto/blake3/c
 # Core essential source files for minimal working system (updated paths)
 CORE_SOURCES = $(UTILS_DIR)/avx2_detect.c $(CORE_DIR)/ece_core.c $(CORE_DIR)/ece_digest.c $(CORE_DIR)/entropy_bus.c $(CORE_DIR)/system_entropy.c $(SRC_DIR)/main_simple.c
 
+# Security suite source files
+SECURITY_SUITE_SOURCES = $(SRC_DIR)/crypto/keymanagement/key_manager.c \
+                        $(SRC_DIR)/crypto/audit/audit.c \
+                        $(SRC_DIR)/crypto/auth/auth.c \
+                        $(SRC_DIR)/crypto/config/config.c \
+                        $(SRC_DIR)/crypto/charm_security_suite.c
+
 # All library source files (for full build)
-ALL_LIB_SOURCES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(CORE_DIR)/*.c) $(wildcard $(UTILS_DIR)/*.c)
+ALL_LIB_SOURCES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(CORE_DIR)/*.c) $(wildcard $(UTILS_DIR)/*.c) $(SECURITY_SUITE_SOURCES)
 
 # Object files for core build (in build directory) 
 CORE_OBJECTS = $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o $(BUILD_DIR)/main_simple.o
+
+# Security suite object files
+SECURITY_SUITE_OBJECTS = $(BUILD_DIR)/key_manager.o $(BUILD_DIR)/audit.o $(BUILD_DIR)/auth.o $(BUILD_DIR)/config.o $(BUILD_DIR)/charm_security_suite.o
+
 ALL_LIB_OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)) \
                   $(patsubst $(CORE_DIR)/%.c,$(BUILD_DIR)/%.o,$(wildcard $(CORE_DIR)/*.c)) \
-                  $(patsubst $(UTILS_DIR)/%.c,$(BUILD_DIR)/%.o,$(wildcard $(UTILS_DIR)/*.c))
+                  $(patsubst $(UTILS_DIR)/%.c,$(BUILD_DIR)/%.o,$(wildcard $(UTILS_DIR)/*.c)) \
+                  $(SECURITY_SUITE_OBJECTS)
 
 # Output files
 LIB_STATIC = $(BUILD_DIR)/libcharm.a
@@ -74,6 +86,31 @@ $(BUILD_DIR)/%.o: $(TESTS_DIR)/%.c | $(BUILD_DIR)
 	@echo "Compiling $< with performance optimizations..."
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
 
+# Security suite object files
+$(BUILD_DIR)/key_manager.o: $(SRC_DIR)/crypto/keymanagement/key_manager.c | $(BUILD_DIR)
+	@echo "Compiling $< with performance optimizations..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(BUILD_DIR)/audit.o: $(SRC_DIR)/crypto/audit/audit.c | $(BUILD_DIR)
+	@echo "Compiling $< with performance optimizations..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(BUILD_DIR)/auth.o: $(SRC_DIR)/crypto/auth/auth.c | $(BUILD_DIR)
+	@echo "Compiling $< with performance optimizations..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(BUILD_DIR)/config.o: $(SRC_DIR)/crypto/config/config.c | $(BUILD_DIR)
+	@echo "Compiling $< with performance optimizations..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(BUILD_DIR)/charm_security_suite.o: $(SRC_DIR)/crypto/charm_security_suite.c | $(BUILD_DIR)
+	@echo "Compiling $< with performance optimizations..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(BUILD_DIR)/charm_minimal_api.o: $(SRC_DIR)/charm_minimal_api.c | $(BUILD_DIR)
+	@echo "Compiling $< with performance optimizations..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+
 # Build core functionality only
 core: $(CORE_OBJECTS)
 	@echo "Building CHARM core binary with maximum performance..."
@@ -97,6 +134,16 @@ small: $(BUILD_DIR)/benchmark_small_inputs.o $(BUILD_DIR)/avx2_detect.o $(BUILD_
 # Build full system
 full: $(LIB_STATIC) $(CHARM_BIN) $(BENCH_BIN)
 
+# Build security suite
+security_suite: $(SECURITY_SUITE_OBJECTS) $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o
+	@echo "Building CHARM Security Suite..."
+	$(CC) $(CFLAGS) -o $(BUILD_DIR)/charm_security_suite \
+		$(SRC_DIR)/main.c \
+		$(SECURITY_SUITE_OBJECTS) \
+		$(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o \
+		$(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o \
+		$(LDFLAGS)
+
 # Build static library
 $(LIB_STATIC): $(ALL_LIB_OBJECTS)
 	@echo "Building static library..."
@@ -108,6 +155,32 @@ test: core bench
 	@echo "Running test suite..."
 	@cd $(BUILD_DIR) && ./charm --version || true
 	@cd $(BUILD_DIR) && ./benchmark_comprehensive || true
+
+# Test security suite - minimal build
+test_security_suite_minimal: $(SECURITY_SUITE_OBJECTS) $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o $(BUILD_DIR)/charm_minimal_api.o
+	@echo "Building minimal security suite test..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/test_security_suite \
+		$(SRC_DIR)/tests/test_security_suite.c \
+		$(SECURITY_SUITE_OBJECTS) \
+		$(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o \
+		$(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o \
+		$(BUILD_DIR)/charm_minimal_api.o \
+		$(LDFLAGS)
+	@echo "Running security suite test..."
+	@mkdir -p logs keystore config
+	@cd $(BUILD_DIR) && ./test_security_suite
+
+# Test security suite
+test_security_suite: $(SECURITY_SUITE_OBJECTS) $(ALL_LIB_OBJECTS)
+	@echo "Building security suite test..."
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/test_security_suite \
+		$(SRC_DIR)/tests/test_security_suite.c \
+		$(SECURITY_SUITE_OBJECTS) \
+		$(ALL_LIB_OBJECTS) \
+		$(LDFLAGS)
+	@echo "Running security suite test..."
+	@mkdir -p logs keystore config
+	@cd $(BUILD_DIR) && ./test_security_suite
 
 # Benchmark target
 benchmark: bench
