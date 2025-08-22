@@ -2,8 +2,8 @@
 # Builds CHARM AEAD implementation with comprehensive testing
 
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -std=c99 -I./include -I../include
-LDFLAGS = -lm
+CFLAGS = -Wall -Wextra -O3 -flto -ffast-math -funroll-loops -mavx2 -march=native -mtune=native -fopenmp -fomit-frame-pointer -finline-functions -std=c99 -I./include -I../include
+LDFLAGS = -lm -flto
 
 # Directories
 SRC_DIR = src
