@@ -209,19 +209,12 @@ charm_aead_status_t charm_hmac(
         
         size_t input_len = 32 + data_len;
         
-        // Use CHARM-B only for very small HMAC inputs (< 64B), regular CHARM for larger
-        // This ensures compatibility while getting CHARM-B benefits for truly small data
-        if (input_len < 64) {
-            charmb_status_t status = charmb_hash(input, input_len, hmac, CHARMB_DIGEST_256);
-            secure_clear(input, input_len);
-            secure_clear(padded_key, sizeof(padded_key));
-            return (status == CHARMB_SUCCESS) ? CHARM_AEAD_SUCCESS : CHARM_AEAD_ERROR_NULL_POINTER;
-        } else {
-            int status = charm_hash(CHARM_256, input, input_len, hmac);
-            secure_clear(input, input_len);
-            secure_clear(padded_key, sizeof(padded_key));
-            return (status == 0) ? CHARM_AEAD_SUCCESS : CHARM_AEAD_ERROR_NULL_POINTER;
-        }
+        // Use regular CHARM for all HMAC operations to ensure deterministic behavior
+        // CHARM-B has a non-deterministic bug that causes HMAC mismatches in SIV mode
+        int status = charm_hash(CHARM_256, input, input_len, hmac);
+        secure_clear(input, input_len);
+        secure_clear(padded_key, sizeof(padded_key));
+        return (status == 0) ? CHARM_AEAD_SUCCESS : CHARM_AEAD_ERROR_NULL_POINTER;
     }
     
     // Fallback for large data - heap allocation
@@ -713,6 +706,7 @@ charm_aead_status_t charm_aead_siv_decrypt(
     for (int i = 0; i < 16; i++) {
         diff |= tag[16 + i] ^ computed_hmac[i];
     }
+    
     secure_clear(computed_hmac, sizeof(computed_hmac));
     secure_clear(computed_siv, sizeof(computed_siv));
     
