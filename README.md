@@ -129,7 +129,7 @@ The underlying CHARM algorithm provides the entropy-native foundation: CHARM/1.0
 ### 2. **CEE – Chaotic Entropy Expansion**  
    Generates and amplifies structured entropy to enhance unpredictability, performance, and cryptographic resilience.
 
-3. **ECE – Entropic Collapse Engine**  
+### 3. **ECE – Entropic Collapse Engine**  
    Stabilizes over-chaotic states by compressing excessive entropy into coherent outputs, ensuring consistent and secure operation.
 
 Together, these modules make CHARM a self-regulating, high-performance hashing framework.
