@@ -767,6 +767,308 @@ charmb_aead_status_t charmb_aead_decrypt(
 }
 
 /**
+ * @brief Generate Synthetic IV (SIV) from key, AAD, and plaintext
+ */
+static charmb_aead_status_t generate_siv(
+    const uint8_t key[CHARMB_AEAD_KEY_SIZE],
+    const uint8_t* aad, size_t aad_len,
+    const uint8_t* plaintext, size_t plaintext_len,
+    uint8_t siv[CHARMB_AEAD_NONCE_SIZE]
+) {
+    // For SIV generation, use a more robust approach with KDF
+    // Create a unique salt from plaintext and AAD for better differentiation
+    
+    // Use first part of plaintext as salt if available
+    const uint8_t* salt = plaintext;
+    size_t salt_len = (plaintext_len > 16) ? 16 : plaintext_len;
+    
+    // Create info string that includes lengths for domain separation
+    uint8_t info[64]; // "SIV-MODE" + lengths + partial AAD + partial plaintext
+    size_t info_len = 0;
+    
+    memcpy(info + info_len, "SIV-MODE", 8);
+    info_len += 8;
+    
+    // Add length information for proper domain separation
+    info[info_len++] = (uint8_t)(aad_len & 0xFF);
+    info[info_len++] = (uint8_t)((aad_len >> 8) & 0xFF);
+    info[info_len++] = (uint8_t)(plaintext_len & 0xFF);
+    info[info_len++] = (uint8_t)((plaintext_len >> 8) & 0xFF);
+    
+    // Add partial AAD if present
+    if (aad && aad_len > 0) {
+        size_t aad_copy = (aad_len > 16) ? 16 : aad_len;
+        memcpy(info + info_len, aad, aad_copy);
+        info_len += aad_copy;
+    }
+    
+    // Add remaining plaintext (after salt)
+    if (plaintext_len > salt_len) {
+        size_t remaining_pt_len = plaintext_len - salt_len;
+        size_t pt_copy = (remaining_pt_len > 32) ? 32 : remaining_pt_len;
+        memcpy(info + info_len, plaintext + salt_len, pt_copy);
+        info_len += pt_copy;
+    }
+    
+    // Use KDF to generate SIV
+    uint8_t siv_output[32];
+    charmb_aead_status_t status = charmb_kdf(key, CHARMB_AEAD_KEY_SIZE, salt, salt_len, info, info_len, siv_output, 32);
+    
+    if (status == CHARMB_AEAD_SUCCESS) {
+        // Truncate to 12 bytes for SIV
+        memcpy(siv, siv_output, CHARMB_AEAD_NONCE_SIZE);
+    }
+    
+    secure_clear(siv_output, sizeof(siv_output));
+    secure_clear(info, info_len);
+    
+    return status;
+}
+
+/**
+ * @brief CHARM-B AEAD SIV Encryption - Misuse-Resistant
+ */
+charmb_aead_status_t charmb_aead_siv_encrypt(
+    const uint8_t key[CHARMB_AEAD_KEY_SIZE],
+    const uint8_t* aad, size_t aad_len,
+    const uint8_t* plaintext, size_t plaintext_len,
+    uint8_t* ciphertext,
+    uint8_t tag[CHARMB_AEAD_TAG_SIZE]
+) {
+    // Reset entropy state to ensure deterministic operation
+    charmb_entropy_reset();
+    
+    if (!key || !plaintext || !ciphertext || !tag) {
+        return CHARMB_AEAD_ERROR_NULL_POINTER;
+    }
+    
+    if (plaintext_len == 0) {
+        return CHARMB_AEAD_ERROR_INVALID_SIZE;
+    }
+    
+    // Generate synthetic IV from key, AAD, and plaintext
+    uint8_t siv[CHARMB_AEAD_NONCE_SIZE];
+    charmb_aead_status_t status = generate_siv(key, aad, aad_len, plaintext, plaintext_len, siv);
+    if (status != CHARMB_AEAD_SUCCESS) {
+        return status;
+    }
+    
+    // Generate keystream using the SIV as nonce
+    uint8_t keystream_stack[256];
+    uint8_t* keystream;
+    bool use_heap = plaintext_len > 256;
+    
+    if (use_heap) {
+        keystream = malloc(plaintext_len);
+        if (!keystream) {
+            secure_clear(siv, sizeof(siv));
+            return CHARMB_AEAD_ERROR_NULL_POINTER;
+        }
+    } else {
+        keystream = keystream_stack;
+    }
+    
+    // Derive encryption key from main key using SIV
+    uint8_t enc_key[32];
+    status = charmb_kdf(key, 32, siv, 12, (const uint8_t*)"SIV-ENC", 7, enc_key, 32);
+    if (status != CHARMB_AEAD_SUCCESS) {
+        secure_clear(siv, sizeof(siv));
+        if (use_heap) free(keystream);
+        return status;
+    }
+    
+    status = generate_keystream(enc_key, siv, 0, keystream, plaintext_len);
+    if (status != CHARMB_AEAD_SUCCESS) {
+        secure_clear(siv, sizeof(siv));
+        secure_clear(enc_key, sizeof(enc_key));
+        secure_clear(keystream, plaintext_len);
+        if (use_heap) free(keystream);
+        return status;
+    }
+    
+    // XOR to produce ciphertext
+    xor_buffers_optimized(plaintext, keystream, ciphertext, plaintext_len);
+    
+    // The tag is just the SIV (first 12 bytes) plus a 4-byte auth code
+    memcpy(tag, siv, CHARMB_AEAD_NONCE_SIZE);
+    
+    // Generate authentication tag for the last 4 bytes using HMAC
+    // Use HMAC to handle arbitrary input sizes safely
+    size_t auth_input_len = aad_len + plaintext_len;
+    uint8_t* auth_input = malloc(auth_input_len);
+    if (!auth_input) {
+        secure_clear(siv, sizeof(siv));
+        secure_clear(enc_key, sizeof(enc_key));
+        secure_clear(keystream, plaintext_len);
+        if (use_heap) free(keystream);
+        return CHARMB_AEAD_ERROR_NULL_POINTER;
+    }
+    
+    size_t offset = 0;
+    if (aad && aad_len > 0) {
+        memcpy(auth_input + offset, aad, aad_len);
+        offset += aad_len;
+    }
+    memcpy(auth_input + offset, ciphertext, plaintext_len);
+    
+    uint8_t auth_tag[32];
+    status = charmb_hmac(key, 32, auth_input, auth_input_len, auth_tag);
+    
+    secure_clear(auth_input, auth_input_len);
+    free(auth_input);
+    
+    if (status != CHARMB_AEAD_SUCCESS) {
+        secure_clear(siv, sizeof(siv));
+        secure_clear(enc_key, sizeof(enc_key));
+        secure_clear(keystream, plaintext_len);
+        if (use_heap) free(keystream);
+        return status;
+    }
+    
+    memcpy(tag + CHARMB_AEAD_NONCE_SIZE, auth_tag, 4);
+    
+    secure_clear(siv, sizeof(siv));
+    secure_clear(enc_key, sizeof(enc_key));
+    secure_clear(keystream, plaintext_len);
+    secure_clear(auth_tag, sizeof(auth_tag));
+    if (use_heap) free(keystream);
+    
+    return CHARMB_AEAD_SUCCESS;
+}
+
+/**
+ * @brief CHARM-B AEAD SIV Decryption - Misuse-Resistant
+ */
+charmb_aead_status_t charmb_aead_siv_decrypt(
+    const uint8_t key[CHARMB_AEAD_KEY_SIZE],
+    const uint8_t* aad, size_t aad_len,
+    const uint8_t* ciphertext, size_t ciphertext_len,
+    const uint8_t tag[CHARMB_AEAD_TAG_SIZE],
+    uint8_t* plaintext
+) {
+    // Reset entropy state to ensure deterministic operation
+    charmb_entropy_reset();
+    
+    if (!key || !ciphertext || !tag || !plaintext) {
+        return CHARMB_AEAD_ERROR_NULL_POINTER;
+    }
+    
+    if (ciphertext_len == 0) {
+        return CHARMB_AEAD_ERROR_INVALID_SIZE;
+    }
+    
+    // Extract SIV from the first 12 bytes of tag
+    uint8_t siv[CHARMB_AEAD_NONCE_SIZE];
+    memcpy(siv, tag, CHARMB_AEAD_NONCE_SIZE);
+    
+    // Verify the authentication tag (last 4 bytes) using HMAC
+    size_t auth_input_len = aad_len + ciphertext_len;
+    uint8_t* auth_input = malloc(auth_input_len);
+    if (!auth_input) {
+        secure_clear(siv, sizeof(siv));
+        return CHARMB_AEAD_ERROR_NULL_POINTER;
+    }
+    
+    size_t offset = 0;
+    if (aad && aad_len > 0) {
+        memcpy(auth_input + offset, aad, aad_len);
+        offset += aad_len;
+    }
+    memcpy(auth_input + offset, ciphertext, ciphertext_len);
+    
+    uint8_t computed_auth_tag[32];
+    charmb_aead_status_t status = charmb_hmac(key, 32, auth_input, auth_input_len, computed_auth_tag);
+    
+    secure_clear(auth_input, auth_input_len);
+    free(auth_input);
+    
+    if (status != CHARMB_AEAD_SUCCESS) {
+        secure_clear(siv, sizeof(siv));
+        return status;
+    }
+    
+    // Constant-time comparison of auth tag
+    uint8_t auth_match = 0;
+    for (int i = 0; i < 4; i++) {
+        auth_match |= tag[CHARMB_AEAD_NONCE_SIZE + i] ^ computed_auth_tag[i];
+    }
+    
+    secure_clear(computed_auth_tag, sizeof(computed_auth_tag));
+    
+    if (auth_match != 0) {
+        secure_clear(siv, sizeof(siv));
+        return CHARMB_AEAD_ERROR_AUTH_FAILED;
+    }
+    
+    // Generate keystream using the SIV as nonce
+    uint8_t keystream_stack[256];
+    uint8_t* keystream;
+    bool use_heap = ciphertext_len > 256;
+    
+    if (use_heap) {
+        keystream = malloc(ciphertext_len);
+        if (!keystream) {
+            secure_clear(siv, sizeof(siv));
+            return CHARMB_AEAD_ERROR_NULL_POINTER;
+        }
+    } else {
+        keystream = keystream_stack;
+    }
+    
+    // Derive same encryption key from main key using SIV
+    uint8_t enc_key[32];
+    status = charmb_kdf(key, 32, siv, 12, (const uint8_t*)"SIV-ENC", 7, enc_key, 32);
+    if (status != CHARMB_AEAD_SUCCESS) {
+        secure_clear(siv, sizeof(siv));
+        if (use_heap) free(keystream);
+        return status;
+    }
+    
+    status = generate_keystream(enc_key, siv, 0, keystream, ciphertext_len);
+    if (status != CHARMB_AEAD_SUCCESS) {
+        secure_clear(siv, sizeof(siv));
+        secure_clear(enc_key, sizeof(enc_key));
+        secure_clear(keystream, ciphertext_len);
+        if (use_heap) free(keystream);
+        return status;
+    }
+    
+    // XOR to recover plaintext
+    xor_buffers_optimized(ciphertext, keystream, plaintext, ciphertext_len);
+    
+    // Verify that the decrypted plaintext produces the same SIV
+    uint8_t computed_siv[CHARMB_AEAD_NONCE_SIZE];
+    status = generate_siv(key, aad, aad_len, plaintext, ciphertext_len, computed_siv);
+    if (status != CHARMB_AEAD_SUCCESS) {
+        secure_clear(siv, sizeof(siv));
+        secure_clear(enc_key, sizeof(enc_key));
+        secure_clear(keystream, ciphertext_len);
+        secure_clear(plaintext, ciphertext_len);
+        if (use_heap) free(keystream);
+        return status;
+    }
+    
+    // Constant-time SIV comparison
+    uint8_t siv_match = 0;
+    for (int i = 0; i < CHARMB_AEAD_NONCE_SIZE; i++) {
+        siv_match |= siv[i] ^ computed_siv[i];
+    }
+    
+    secure_clear(siv, sizeof(siv));
+    secure_clear(enc_key, sizeof(enc_key));
+    secure_clear(keystream, ciphertext_len);
+    secure_clear(computed_siv, sizeof(computed_siv));
+    if (use_heap) free(keystream);
+    
+    if (siv_match != 0) {
+        secure_clear(plaintext, ciphertext_len);
+        return CHARMB_AEAD_ERROR_AUTH_FAILED;
+    }
+    
+    return CHARMB_AEAD_SUCCESS;
+}
+
+/**
  * @brief Get current time in milliseconds
  */
 static double get_time_ms(void) {

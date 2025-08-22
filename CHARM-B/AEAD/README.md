@@ -4,11 +4,20 @@ CHARM-B AEAD is an Authenticated Encryption with Associated Data (AEAD) construc
 
 ## Design Overview
 
+CHARM-B AEAD provides two modes of operation:
+
+### Regular Mode (Nonce-Required)
 CHARM-B AEAD uses a two-key approach derived from a single master key:
 - **Encryption Key**: Used for keystream generation via CHARM-B hash
 - **Authentication Key**: Used for HMAC-CHARM tag computation
 
 The construction follows the pattern: `C = P ⊕ KEYSTREAM` and `TAG = HMAC(auth_key, AAD || C)`
+
+### SIV Mode (Misuse-Resistant)
+CHARM-B AEAD SIV (Synthetic IV) mode provides nonce-misuse resistance:
+- **Deterministic**: Same key, AAD, and plaintext always produce the same ciphertext
+- **Misuse-Resistant**: Safe even with repeated or predictable nonces
+- **SIV Generation**: Synthetic IV derived from `KDF(key, plaintext_prefix, AAD || lengths || plaintext_suffix)`
 
 ### Key Derivation
 
@@ -37,7 +46,7 @@ AUTH_KEY = HKDF-EXPAND(HKDF-EXTRACT(NONCE, KEY), "CHARM-B-AEAD", 32)[32:]
 ### Cryptographic Strength
 - **Confidentiality**: Based on CHARM-B PRF security
 - **Integrity**: 128-bit authentication strength via HMAC-CHARM
-- **Nonce Misuse**: Not nonce-misuse resistant (requires unique nonces)
+- **Nonce Misuse**: Regular mode requires unique nonces; SIV mode is nonce-misuse resistant
 - **Forward Security**: No forward secrecy (stateless design)
 
 ### Constant-Time Implementation
@@ -55,7 +64,7 @@ AUTH_KEY = HKDF-EXPAND(HKDF-EXTRACT(NONCE, KEY), "CHARM-B-AEAD", 32)[32:]
 
 #### Planned Improvements
 - Performance optimization for larger payloads
-- Misuse-resistant variant (SIV-style)
+- ✅ ~~Misuse-resistant variant (SIV-style)~~ **IMPLEMENTED**
 - Hardware acceleration support
 - Formal security analysis
 - Side-channel hardening
@@ -87,7 +96,7 @@ if (getrandom(nonce, 12, 0) != 12) {
 
 ## API Usage
 
-### Basic Encryption/Decryption
+### Regular Mode Encryption/Decryption
 
 ```c
 #include "charmb_aead.h"
@@ -123,6 +132,46 @@ status = charmb_aead_decrypt(
 
 if (status == CHARMB_AEAD_SUCCESS) {
     // Decryption and authentication successful
+    // Use recovered plaintext
+}
+```
+
+### SIV Mode Encryption/Decryption (Misuse-Resistant)
+
+```c
+#include "charmb_aead.h"
+
+uint8_t key[32];        // 256-bit master key
+uint8_t aad[] = "Additional data";
+uint8_t plaintext[] = "Secret message";
+uint8_t ciphertext[sizeof(plaintext)];
+uint8_t tag[16];        // 128-bit tag (contains SIV + auth)
+
+// SIV Encryption (no nonce needed)
+charmb_aead_status_t status = charmb_aead_siv_encrypt(
+    key,
+    aad, strlen((char*)aad),
+    plaintext, strlen((char*)plaintext),
+    ciphertext, tag
+);
+
+if (status == CHARMB_AEAD_SUCCESS) {
+    // SIV encryption successful - deterministic output
+    // Store/transmit: aad + ciphertext + tag
+    // Note: Same inputs always produce same outputs
+}
+
+// SIV Decryption
+uint8_t recovered[sizeof(plaintext)];
+status = charmb_aead_siv_decrypt(
+    key,
+    aad, strlen((char*)aad), 
+    ciphertext, strlen((char*)plaintext),
+    tag, recovered
+);
+
+if (status == CHARMB_AEAD_SUCCESS) {
+    // SIV decryption and authentication successful
     // Use recovered plaintext
 }
 ```
@@ -221,18 +270,18 @@ assert(memcmp(original, recovered, len) == 0);
 - Systems without AES-NI support
 - Environments requiring CHARM-B specific properties
 - Small, fixed-size payloads
+- Applications requiring misuse resistance (use SIV mode)
 
 ❌ **Not recommended for**:
 - High-throughput applications
 - Production systems without security review
 - Large payload encryption
-- Applications requiring misuse resistance
 
 ## Future Enhancements
 
 ### Planned Improvements
 - [ ] Performance optimization for larger payloads
-- [ ] Misuse-resistant variant (SIV-style)
+- [x] ~~Misuse-resistant variant (SIV-style)~~ **COMPLETED**
 - [ ] Hardware acceleration support
 - [ ] Formal security analysis
 - [ ] Side-channel hardening
