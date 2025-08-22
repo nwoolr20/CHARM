@@ -51,6 +51,20 @@ AUTH_KEY = HKDF-EXPAND(HKDF-EXTRACT(NONCE, KEY), "CHARM-B-AEAD", 32)[32:]
 - **Cache Attacks**: CHARM-B uses predictable memory access patterns
 - **Power Analysis**: Not specifically hardened (implementation dependent)
 
+### Future Enhancements
+
+#### Planned Improvements
+- Performance optimization for larger payloads
+- Misuse-resistant variant (SIV-style)
+- Hardware acceleration support
+- Formal security analysis
+- Side-channel hardening
+
+#### Research Directions
+- Integration with CHARM-B specific entropy properties
+- Custom authentication modes leveraging CHARM-B features
+- Optimizations for ultra-constrained environments
+
 ## Nonce Management
 
 **Critical**: Nonces must be unique for each encryption with the same key.
