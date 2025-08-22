@@ -64,7 +64,7 @@ $(BUILD_DIR)/charm_aead_tests.o: $(TEST_DIR)/charm_aead_tests.c $(INCLUDE_DIR)/c
 benchmark: $(BENCHMARK_BINARY)
 
 $(BENCHMARK_BINARY): $(BUILD_DIR) $(BENCHMARK_OBJECTS) $(AEAD_LIB)
-	$(CC) $(CFLAGS) $(BENCHMARK_OBJECTS) -L$(BUILD_DIR) -lcharm_aead -L../../CHARM-B/AEAD/build -lcharmb_aead $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) $(BENCHMARK_OBJECTS) -L$(BUILD_DIR) -lcharm_aead -L../../CHARM-B/build -lcharmb_aead -lcharmb $(LDFLAGS) -o $@
 	@echo "Built benchmark binary: $@"
 
 $(BUILD_DIR)/charm_aead_benchmark_comparison.o: $(TEST_DIR)/charm_aead_benchmark_comparison.c
