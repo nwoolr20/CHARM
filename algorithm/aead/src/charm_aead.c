@@ -14,6 +14,14 @@
 #include <time.h>
 #include <stdio.h>
 
+#ifdef __AVX2__
+#include <immintrin.h>
+#define SIMD_AVX2 1
+#elif defined(__SSE2__)
+#include <emmintrin.h>
+#define SIMD_SSE2 1
+#endif
+
 // Internal utility functions
 static void secure_clear(void* ptr, size_t len) {
     volatile uint8_t* volatile_ptr = (volatile uint8_t*)ptr;
@@ -22,8 +30,34 @@ static void secure_clear(void* ptr, size_t len) {
     }
 }
 
-static void xor_buffers(const uint8_t* a, const uint8_t* b, uint8_t* out, size_t len) {
-    for (size_t i = 0; i < len; i++) {
+/**
+ * @brief Ultra-fast SIMD-optimized XOR operation
+ */
+static inline void xor_buffers(const uint8_t* a, const uint8_t* b, uint8_t* out, size_t len) {
+    size_t i = 0;
+    
+#ifdef SIMD_AVX2
+    // AVX2 optimization for 32-byte chunks
+    for (; i + 32 <= len; i += 32) {
+        __m256i va = _mm256_loadu_si256((__m256i*)(a + i));
+        __m256i vb = _mm256_loadu_si256((__m256i*)(b + i));
+        __m256i result = _mm256_xor_si256(va, vb);
+        _mm256_storeu_si256((__m256i*)(out + i), result);
+    }
+#endif
+    
+#if defined(SIMD_SSE2) || defined(SIMD_AVX2)
+    // SSE2 optimization for 16-byte chunks
+    for (; i + 16 <= len; i += 16) {
+        __m128i va = _mm_loadu_si128((__m128i*)(a + i));
+        __m128i vb = _mm_loadu_si128((__m128i*)(b + i));
+        __m128i result = _mm_xor_si128(va, vb);
+        _mm_storeu_si128((__m128i*)(out + i), result);
+    }
+#endif
+    
+    // Handle remaining bytes
+    for (; i < len; i++) {
         out[i] = a[i] ^ b[i];
     }
 }
@@ -218,7 +252,39 @@ charm_aead_status_t charm_aead_encrypt(
         return CHARM_AEAD_ERROR_NULL_POINTER;
     }
     
-    // Generate keystream for encryption
+    // Ultra-fast path for small payloads (≤256 bytes) - stack allocation
+    if (plaintext_len <= 256 && aad_len <= 256) {
+        uint8_t keystream[256];
+        
+        charm_aead_status_t status = charm_generate_keystream_fast(
+            key, nonce, 0, keystream, plaintext_len
+        );
+        if (status != CHARM_AEAD_SUCCESS) return status;
+        
+        // Encrypt: ciphertext = plaintext XOR keystream
+        xor_buffers(plaintext, keystream, ciphertext, plaintext_len);
+        secure_clear(keystream, plaintext_len);
+        
+        // Generate authentication tag with stack allocation
+        uint8_t auth_input[528]; // 16 + 256 + 256 max
+        size_t offset = 0;
+        memcpy(auth_input + offset, nonce, CHARM_AEAD_NONCE_SIZE);
+        offset += CHARM_AEAD_NONCE_SIZE;
+        
+        if (aad && aad_len > 0) {
+            memcpy(auth_input + offset, aad, aad_len);
+            offset += aad_len;
+        }
+        
+        memcpy(auth_input + offset, ciphertext, plaintext_len);
+        offset += plaintext_len;
+        
+        status = charm_hmac(key, CHARM_AEAD_KEY_SIZE, auth_input, offset, tag);
+        secure_clear(auth_input, offset);
+        return status;
+    }
+    
+    // Fallback path for larger payloads - heap allocation
     uint8_t* keystream = malloc(plaintext_len);
     if (!keystream) return CHARM_AEAD_ERROR_NULL_POINTER;
     
@@ -274,7 +340,47 @@ charm_aead_status_t charm_aead_decrypt(
         return CHARM_AEAD_ERROR_NULL_POINTER;
     }
     
-    // Verify authentication tag first
+    // Ultra-fast path for small payloads (≤256 bytes) - stack allocation
+    if (ciphertext_len <= 256 && aad_len <= 256) {
+        // Verify authentication tag first with stack allocation
+        uint8_t auth_input[528]; // 16 + 256 + 256 max
+        size_t offset = 0;
+        memcpy(auth_input + offset, nonce, CHARM_AEAD_NONCE_SIZE);
+        offset += CHARM_AEAD_NONCE_SIZE;
+        
+        if (aad && aad_len > 0) {
+            memcpy(auth_input + offset, aad, aad_len);
+            offset += aad_len;
+        }
+        
+        memcpy(auth_input + offset, ciphertext, ciphertext_len);
+        offset += ciphertext_len;
+        
+        uint8_t computed_tag[CHARM_AEAD_TAG_SIZE];
+        charm_aead_status_t status = charm_hmac(key, CHARM_AEAD_KEY_SIZE, auth_input, offset, computed_tag);
+        secure_clear(auth_input, offset);
+        
+        if (status != CHARM_AEAD_SUCCESS) return status;
+        
+        // Constant-time tag comparison
+        uint8_t tag_diff = 0;
+        for (int i = 0; i < CHARM_AEAD_TAG_SIZE; i++) {
+            tag_diff |= (tag[i] ^ computed_tag[i]);
+        }
+        if (tag_diff != 0) return CHARM_AEAD_ERROR_AUTH_FAILED;
+        
+        // Generate keystream and decrypt
+        uint8_t keystream[256];
+        status = charm_generate_keystream_fast(key, nonce, 0, keystream, ciphertext_len);
+        if (status != CHARM_AEAD_SUCCESS) return status;
+        
+        // Decrypt: plaintext = ciphertext XOR keystream
+        xor_buffers(ciphertext, keystream, plaintext, ciphertext_len);
+        secure_clear(keystream, ciphertext_len);
+        return CHARM_AEAD_SUCCESS;
+    }
+    
+    // Fallback path for larger payloads - heap allocation
     size_t auth_input_len = CHARM_AEAD_NONCE_SIZE + aad_len + ciphertext_len;
     uint8_t* auth_input = malloc(auth_input_len);
     if (!auth_input) return CHARM_AEAD_ERROR_NULL_POINTER;
