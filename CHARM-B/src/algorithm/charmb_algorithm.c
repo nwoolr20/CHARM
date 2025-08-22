@@ -35,6 +35,12 @@ static int ensure_initialized(void) {
 }
 
 /**
+ * @brief CHARM-B large input hash using chunked processing
+ */
+static charmb_status_t charmb_hash_large(const uint8_t* data, size_t size, 
+                                         uint8_t* digest, charmb_digest_size_t digest_size);
+
+/**
  * @brief Main CHARM-B hash function with automatic size optimization
  */
 charmb_status_t charmb_hash(const uint8_t* data, size_t size, 
@@ -75,10 +81,13 @@ charmb_status_t charmb_hash(const uint8_t* data, size_t size,
                 uint8_t padded[32] = {0};
                 memcpy(padded, data, size);
                 return charmb_hash_32b(padded, digest, digest_size);
-            } else {
+            } else if (size <= 64) {
                 uint8_t padded[64] = {0};
                 memcpy(padded, data, size);
                 return charmb_hash_64b(padded, digest, digest_size);
+            } else {
+                // For inputs > 64 bytes, use chunked processing with 64-byte blocks
+                return charmb_hash_large(data, size, digest, digest_size);
             }
     }
 }
@@ -235,5 +244,46 @@ charmb_status_t charmb_benchmark(size_t size, int iterations, double* throughput
     }
     
     free(test_data);
+    return CHARMB_SUCCESS;
+}
+
+/**
+ * @brief CHARM-B large input hash using chunked processing
+ */
+static charmb_status_t charmb_hash_large(const uint8_t* data, size_t size, 
+                                         uint8_t* digest, charmb_digest_size_t digest_size) {
+    if (!data || !digest) return CHARMB_ERROR_NULL_POINTER;
+    if (size <= 64) return CHARMB_ERROR_INVALID_SIZE; // Should use specialized functions
+    
+    // Initialize intermediate hash state
+    uint8_t state[32];
+    memset(state, 0, 32);
+    
+    // Process input in 64-byte chunks
+    size_t processed = 0;
+    while (processed < size) {
+        uint8_t chunk[64];
+        size_t chunk_size = (size - processed < 64) ? (size - processed) : 64;
+        
+        // Copy chunk and pad if necessary
+        memset(chunk, 0, 64);
+        memcpy(chunk, data + processed, chunk_size);
+        
+        // XOR previous state into chunk for chaining
+        for (int i = 0; i < 32 && i < chunk_size; i++) {
+            chunk[i] ^= state[i];
+        }
+        
+        // Hash the chunk
+        charmb_status_t status = charmb_hash_64b(chunk, state, CHARMB_DIGEST_256);
+        if (status != CHARMB_SUCCESS) return status;
+        
+        processed += chunk_size;
+    }
+    
+    // Final output truncation if needed
+    size_t output_bytes = (digest_size == CHARMB_DIGEST_128) ? 16 : 32;
+    memcpy(digest, state, output_bytes);
+    
     return CHARMB_SUCCESS;
 }

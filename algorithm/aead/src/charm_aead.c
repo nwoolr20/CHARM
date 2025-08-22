@@ -40,6 +40,29 @@ static charm_aead_status_t charm_generate_keystream_fast(
 ) {
     if (!key || !nonce || !keystream) return CHARM_AEAD_ERROR_NULL_POINTER;
     
+    // Ultra-fast path for small payloads (≤32 bytes) - single CHARM-256 call
+    if (keystream_len <= 32) {
+        uint8_t input[52];
+        memcpy(input, key, 32);
+        memcpy(input + 32, nonce, 16);
+        input[48] = (uint8_t)(counter & 0xFF);
+        input[49] = (uint8_t)((counter >> 8) & 0xFF);
+        input[50] = (uint8_t)((counter >> 16) & 0xFF);
+        input[51] = (uint8_t)((counter >> 24) & 0xFF);
+        
+        uint8_t block[32];
+        int status = charm_hash(CHARM_256, input, 52, block);
+        if (status != 0) {
+            secure_clear(input, sizeof(input));
+            return CHARM_AEAD_ERROR_NULL_POINTER;
+        }
+        
+        memcpy(keystream, block, keystream_len);
+        secure_clear(input, sizeof(input));
+        secure_clear(block, sizeof(block));
+        return CHARM_AEAD_SUCCESS;
+    }
+    
     // Build input: key(32) || nonce(16) || counter(4) = 52 bytes
     uint8_t input[52];
     memcpy(input, key, 32);
@@ -55,12 +78,12 @@ static charm_aead_status_t charm_generate_keystream_fast(
         input[50] = (uint8_t)((block_counter >> 16) & 0xFF);
         input[51] = (uint8_t)((block_counter >> 24) & 0xFF);
         
-        // Use CHARM-512 for 64-byte blocks (faster than multiple CHARM-256 calls)
-        uint8_t block[64];
-        int status = charm_hash(CHARM_512, input, 52, block);
+        // Use CHARM-256 for 32-byte blocks (much faster than CHARM-512)
+        uint8_t block[32];
+        int status = charm_hash(CHARM_256, input, 52, block);
         if (status != 0) return CHARM_AEAD_ERROR_NULL_POINTER;
         
-        size_t copy_len = (keystream_len - generated < 64) ? (keystream_len - generated) : 64;
+        size_t copy_len = (keystream_len - generated < 32) ? (keystream_len - generated) : 32;
         memcpy(keystream + generated, block, copy_len);
         generated += copy_len;
         block_counter++;
@@ -94,7 +117,19 @@ charm_aead_status_t charm_hmac(
         if (status != 0) return CHARM_AEAD_ERROR_NULL_POINTER;
     }
     
-    // Build input: key || data
+    // Ultra-fast path for small data (≤512 bytes) - stack allocation
+    if (data_len <= 512) {
+        uint8_t input[544]; // 32 + 512 max
+        memcpy(input, padded_key, 32);
+        memcpy(input + 32, data, data_len);
+        
+        int status = charm_hash(CHARM_256, input, 32 + data_len, hmac);
+        secure_clear(input, 32 + data_len);
+        secure_clear(padded_key, sizeof(padded_key));
+        return (status == 0) ? CHARM_AEAD_SUCCESS : CHARM_AEAD_ERROR_NULL_POINTER;
+    }
+    
+    // Fallback for large data - heap allocation
     size_t input_len = 32 + data_len;
     uint8_t* input = malloc(input_len);
     if (!input) return CHARM_AEAD_ERROR_NULL_POINTER;

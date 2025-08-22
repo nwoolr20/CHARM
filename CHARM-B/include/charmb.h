@@ -38,7 +38,7 @@ extern "C" {
 /**
  * @brief CHARM-B Constants
  */
-#define CHARMB_MAX_INPUT_SIZE 64    // Maximum optimized input size
+#define CHARMB_MAX_INPUT_SIZE 4096  // Extended input size for AEAD support
 #define CHARMB_DIGEST_256_SIZE 32   // 256-bit digest size
 #define CHARMB_DIGEST_128_SIZE 16   // 128-bit digest size for micro-hashing
 
