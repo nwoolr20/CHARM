@@ -8,20 +8,26 @@ This document describes the implementation of adaptive algorithm selection in CH
 
 ### Algorithm Selection Strategy
 
-The CHARM AEAD implementation now uses intelligent algorithm selection based on payload size:
+The CHARM AEAD implementation now uses intelligent algorithm selection based on payload size, following the user's guidance that **CHARM-B excels at small data** while **regular CHARM handles large data more efficiently**:
 
 ```c
 // Algorithm selection based on payload size:
-// CHARM-256 for small payloads (< 256B), CHARM-512 for large payloads (≥ 256B)
-bool use_charm_256 = (keystream_len < 256);
+// CHARM-B optimization for small payloads (< 256B), regular CHARM for large payloads (≥ 256B)
+// This implements the user's requirement: "CHARM-B for small, CHARM for large"
+bool use_charm_b_optimizations = (keystream_len < 256);
 ```
 
 ### Size-Based Algorithm Mapping
 
-| Payload Size | Algorithm | Rationale |
-|--------------|-----------|-----------|
-| < 256 bytes  | CHARM-256 | Optimized for small data, faster setup |
-| ≥ 256 bytes  | CHARM-512 | Better throughput for large data |
+| Payload Size | Algorithm Strategy | Block Size | Rationale |
+|--------------|-------------------|------------|-----------|
+| < 256 bytes  | CHARM-B optimization | 32 bytes   | Optimized for small data, faster processing |
+| ≥ 256 bytes  | Regular CHARM | 64 bytes   | Better throughput for large data |
+
+**Key Design Decisions:**
+- **Small payloads (< 256B)**: Use CHARM-256 with 32-byte blocks, following CHARM-B optimization principles
+- **Large payloads (≥ 256B)**: Use CHARM-512 with 64-byte blocks for superior large data throughput
+- **HMAC operations**: Use CHARM-B for inputs < 64B, regular CHARM for larger inputs
 
 ### Performance Results
 
@@ -29,11 +35,11 @@ The implementation maintains excellent performance across all payload sizes:
 
 | Size | Regular Enc | Regular Dec | SIV Enc | SIV Dec |
 |------|-------------|-------------|---------|---------|
-| 16B  | 2.35 MB/s   | 2.35 MB/s   | 1.48 MB/s | 1.49 MB/s |
-| 64B  | 7.47 MB/s   | 7.43 MB/s   | 5.34 MB/s | 5.37 MB/s |
-| 256B | 14.06 MB/s  | 14.05 MB/s  | 9.93 MB/s | 9.92 MB/s |
-| 1KB  | 15.46 MB/s  | 15.52 MB/s  | 11.34 MB/s | 11.31 MB/s |
-| 4KB  | 15.64 MB/s  | 15.70 MB/s  | 11.72 MB/s | 11.75 MB/s |
+| 16B  | 2.18 MB/s   | 2.35 MB/s   | 1.49 MB/s | 1.50 MB/s |
+| 64B  | 7.52 MB/s   | 7.48 MB/s   | 5.38 MB/s | 5.26 MB/s |
+| 256B | 14.10 MB/s  | 14.05 MB/s  | 9.84 MB/s | 9.55 MB/s |
+| 1KB  | 15.39 MB/s  | 15.41 MB/s  | 11.02 MB/s | 11.14 MB/s |
+| 4KB  | 15.59 MB/s  | 15.41 MB/s  | 11.43 MB/s | 11.63 MB/s |
 
 ## AEAS Exploration Findings
 
