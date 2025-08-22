@@ -63,7 +63,30 @@ static inline void xor_buffers(const uint8_t* a, const uint8_t* b, uint8_t* out,
 }
 
 /**
- * @brief Fast keystream generation using CHARM-256 but optimized
+ * @brief Unified hash function that selects appropriate algorithm based on input size
+ * 
+ * Uses CHARM-B for small inputs (< 256B) and CHARM for large inputs (≥ 256B)
+ * This implements the user's requirement for algorithm selection based on data size.
+ */
+static int charm_hash_adaptive(const uint8_t* data, size_t len, uint8_t* output) {
+    if (!data || !output) return -1;
+    
+    if (len < 256) {
+        // Use CHARM-B for small data (< 256B) - optimized for small inputs
+        charmb_status_t status = charmb_hash(data, len, output, CHARMB_DIGEST_256);
+        return (status == CHARMB_SUCCESS) ? 0 : -1;
+    } else {
+        // Use regular CHARM for large data (≥ 256B) - better for large data handling
+        return charm_hash(CHARM_256, data, len, output);
+    }
+}
+
+/**
+ * @brief Adaptive keystream generation using algorithm selection based on payload size
+ * 
+ * Uses CHARM-B for small payloads (< 256B) and CHARM for large payloads (≥ 256B)
+ * This follows the design principle that CHARM-B is optimized for small data
+ * while CHARM handles large data more efficiently.
  */
 static charm_aead_status_t charm_generate_keystream_fast(
     const uint8_t key[CHARM_AEAD_KEY_SIZE],
@@ -74,63 +97,103 @@ static charm_aead_status_t charm_generate_keystream_fast(
 ) {
     if (!key || !nonce || !keystream) return CHARM_AEAD_ERROR_NULL_POINTER;
     
-    // Ultra-fast path for small payloads (≤32 bytes) - single CHARM-256 call
-    if (keystream_len <= 32) {
+    // Algorithm selection based on payload size:
+    // CHARM-B for small payloads (< 256B), CHARM for large payloads (≥ 256B)
+    bool use_charm_b = (keystream_len < 256);
+    
+    if (use_charm_b) {
+        // CHARM-B path for small payloads - ultra-optimized
+        if (keystream_len <= 32) {
+            // Ultra-fast path: single CHARM-B call for very small payloads
+            uint8_t input[52];
+            memcpy(input, key, 32);
+            memcpy(input + 32, nonce, 16);
+            input[48] = (uint8_t)(counter & 0xFF);
+            input[49] = (uint8_t)((counter >> 8) & 0xFF);
+            input[50] = (uint8_t)((counter >> 16) & 0xFF);
+            input[51] = (uint8_t)((counter >> 24) & 0xFF);
+            
+            uint8_t block[32];
+            int status = charm_hash_adaptive(input, 52, block);
+            if (status != 0) {
+                secure_clear(input, sizeof(input));
+                return CHARM_AEAD_ERROR_NULL_POINTER;
+            }
+            
+            memcpy(keystream, block, keystream_len);
+            secure_clear(input, sizeof(input));
+            secure_clear(block, sizeof(block));
+            return CHARM_AEAD_SUCCESS;
+        }
+        
+        // CHARM-B path for small-medium payloads (32-255 bytes)
         uint8_t input[52];
         memcpy(input, key, 32);
         memcpy(input + 32, nonce, 16);
-        input[48] = (uint8_t)(counter & 0xFF);
-        input[49] = (uint8_t)((counter >> 8) & 0xFF);
-        input[50] = (uint8_t)((counter >> 16) & 0xFF);
-        input[51] = (uint8_t)((counter >> 24) & 0xFF);
         
-        uint8_t block[32];
-        int status = charm_hash(CHARM_256, input, 52, block);
-        if (status != 0) {
-            secure_clear(input, sizeof(input));
-            return CHARM_AEAD_ERROR_NULL_POINTER;
+        size_t generated = 0;
+        uint32_t block_counter = counter;
+        
+        while (generated < keystream_len) {
+            // Encode counter as little-endian
+            input[48] = (uint8_t)(block_counter & 0xFF);
+            input[49] = (uint8_t)((block_counter >> 8) & 0xFF);
+            input[50] = (uint8_t)((block_counter >> 16) & 0xFF);
+            input[51] = (uint8_t)((block_counter >> 24) & 0xFF);
+            
+            // Use CHARM-B for 32-byte blocks
+            uint8_t block[32];
+            int status = charm_hash_adaptive(input, 52, block);
+            if (status != 0) return CHARM_AEAD_ERROR_NULL_POINTER;
+            
+            size_t copy_len = (keystream_len - generated < 32) ? (keystream_len - generated) : 32;
+            memcpy(keystream + generated, block, copy_len);
+            generated += copy_len;
+            block_counter++;
+            
+            secure_clear(block, sizeof(block));
         }
         
-        memcpy(keystream, block, keystream_len);
         secure_clear(input, sizeof(input));
-        secure_clear(block, sizeof(block));
+        return CHARM_AEAD_SUCCESS;
+    } else {
+        // CHARM path for large payloads (≥ 256B) - better throughput for large data
+        uint8_t input[52];
+        memcpy(input, key, 32);
+        memcpy(input + 32, nonce, 16);
+        
+        size_t generated = 0;
+        uint32_t block_counter = counter;
+        
+        while (generated < keystream_len) {
+            // Encode counter as little-endian
+            input[48] = (uint8_t)(block_counter & 0xFF);
+            input[49] = (uint8_t)((block_counter >> 8) & 0xFF);
+            input[50] = (uint8_t)((block_counter >> 16) & 0xFF);
+            input[51] = (uint8_t)((block_counter >> 24) & 0xFF);
+            
+            // Use CHARM-512 for 64-byte blocks (better throughput for large data)
+            uint8_t block[64];
+            int status = charm_hash(CHARM_512, input, 52, block);
+            if (status != 0) return CHARM_AEAD_ERROR_NULL_POINTER;
+            
+            size_t copy_len = (keystream_len - generated < 64) ? (keystream_len - generated) : 64;
+            memcpy(keystream + generated, block, copy_len);
+            generated += copy_len;
+            block_counter++;
+            
+            secure_clear(block, sizeof(block));
+        }
+        
+        secure_clear(input, sizeof(input));
         return CHARM_AEAD_SUCCESS;
     }
-    
-    // Build input: key(32) || nonce(16) || counter(4) = 52 bytes
-    uint8_t input[52];
-    memcpy(input, key, 32);
-    memcpy(input + 32, nonce, 16);
-    
-    size_t generated = 0;
-    uint32_t block_counter = counter;
-    
-    while (generated < keystream_len) {
-        // Encode counter as little-endian
-        input[48] = (uint8_t)(block_counter & 0xFF);
-        input[49] = (uint8_t)((block_counter >> 8) & 0xFF);
-        input[50] = (uint8_t)((block_counter >> 16) & 0xFF);
-        input[51] = (uint8_t)((block_counter >> 24) & 0xFF);
-        
-        // Use CHARM-256 for 32-byte blocks (much faster than CHARM-512)
-        uint8_t block[32];
-        int status = charm_hash(CHARM_256, input, 52, block);
-        if (status != 0) return CHARM_AEAD_ERROR_NULL_POINTER;
-        
-        size_t copy_len = (keystream_len - generated < 32) ? (keystream_len - generated) : 32;
-        memcpy(keystream + generated, block, copy_len);
-        generated += copy_len;
-        block_counter++;
-        
-        secure_clear(block, sizeof(block));
-    }
-    
-    secure_clear(input, sizeof(input));
-    return CHARM_AEAD_SUCCESS;
 }
 
 /**
- * @brief CHARM HMAC implementation using standard CHARM for compatibility
+ * @brief CHARM HMAC implementation with adaptive algorithm selection
+ * 
+ * Uses CHARM-B for small data and CHARM for large data to optimize performance
  */
 charm_aead_status_t charm_hmac(
     const uint8_t* key, size_t key_len,
@@ -139,15 +202,15 @@ charm_aead_status_t charm_hmac(
 ) {
     if (!key || !data || !hmac) return CHARM_AEAD_ERROR_NULL_POINTER;
     
-    // Simple but compatible HMAC using CHARM-256: CHARM(key || data)
+    // Simple but compatible HMAC using adaptive algorithm: CHARM(key || data)
     uint8_t padded_key[32];
     memset(padded_key, 0, 32);
     
     if (key_len <= 32) {
         memcpy(padded_key, key, key_len);
     } else {
-        // Hash long keys
-        int status = charm_hash(CHARM_256, key, key_len, padded_key);
+        // Hash long keys using adaptive algorithm
+        int status = charm_hash_adaptive(key, key_len, padded_key);
         if (status != 0) return CHARM_AEAD_ERROR_NULL_POINTER;
     }
     
@@ -157,7 +220,7 @@ charm_aead_status_t charm_hmac(
         memcpy(input, padded_key, 32);
         memcpy(input + 32, data, data_len);
         
-        int status = charm_hash(CHARM_256, input, 32 + data_len, hmac);
+        int status = charm_hash_adaptive(input, 32 + data_len, hmac);
         secure_clear(input, 32 + data_len);
         secure_clear(padded_key, sizeof(padded_key));
         return (status == 0) ? CHARM_AEAD_SUCCESS : CHARM_AEAD_ERROR_NULL_POINTER;
@@ -171,8 +234,8 @@ charm_aead_status_t charm_hmac(
     memcpy(input, padded_key, 32);
     memcpy(input + 32, data, data_len);
     
-    // Use CHARM hash as HMAC
-    int status = charm_hash(CHARM_256, input, input_len, hmac);
+    // Use adaptive hash selection
+    int status = charm_hash_adaptive(input, input_len, hmac);
     secure_clear(input, input_len);
     free(input);
     secure_clear(padded_key, sizeof(padded_key));
@@ -435,7 +498,7 @@ charm_aead_status_t charm_aead_decrypt(
 }
 
 /**
- * @brief Generate Synthetic IV for SIV mode
+ * @brief Generate Synthetic IV for SIV mode with adaptive algorithm selection
  */
 charm_aead_status_t charm_generate_siv(
     const uint8_t key[CHARM_AEAD_KEY_SIZE],
@@ -445,6 +508,9 @@ charm_aead_status_t charm_generate_siv(
 ) {
     // SIV = first 16 bytes of CHARM-512(key || "SIV" || aad_len || aad || plaintext_len || plaintext)
     size_t input_len = 32 + 3 + 8 + aad_len + 8 + plaintext_len;
+    
+    // For SIV generation, always use CHARM-512 regardless of size for maximum security
+    // and consistent SIV generation (important for deterministic behavior)
     uint8_t* input = malloc(input_len);
     if (!input) return CHARM_AEAD_ERROR_NULL_POINTER;
     
