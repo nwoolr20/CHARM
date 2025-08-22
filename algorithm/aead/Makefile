@@ -54,7 +54,7 @@ $(BUILD_DIR)/charm.o: ../src/charm_lib.c ../include/charm.h
 test: $(TEST_BINARY)
 
 $(TEST_BINARY): $(BUILD_DIR) $(TEST_OBJECTS) $(AEAD_LIB)
-	$(CC) $(CFLAGS) $(TEST_OBJECTS) -L$(BUILD_DIR) -lcharm_aead $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) $(TEST_OBJECTS) -L$(BUILD_DIR) -lcharm_aead -L../../CHARM-B/build -lcharmb $(LDFLAGS) -o $@
 	@echo "Built test binary: $@"
 
 $(BUILD_DIR)/charm_aead_tests.o: $(TEST_DIR)/charm_aead_tests.c $(INCLUDE_DIR)/charm_aead.h

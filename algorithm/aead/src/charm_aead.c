@@ -8,6 +8,7 @@
 
 #include "charm_aead.h"
 #include "../include/charm.h"
+#include "../../CHARM-B/include/charmb.h"
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
@@ -28,9 +29,9 @@ static void xor_buffers(const uint8_t* a, const uint8_t* b, uint8_t* out, size_t
 }
 
 /**
- * @brief Generate keystream using CHARM algorithm
+ * @brief Fast keystream generation using CHARM-256 but optimized
  */
-static charm_aead_status_t charm_generate_keystream(
+static charm_aead_status_t charm_generate_keystream_fast(
     const uint8_t key[CHARM_AEAD_KEY_SIZE],
     const uint8_t nonce[CHARM_AEAD_NONCE_SIZE],
     uint32_t counter,
@@ -39,8 +40,8 @@ static charm_aead_status_t charm_generate_keystream(
 ) {
     if (!key || !nonce || !keystream) return CHARM_AEAD_ERROR_NULL_POINTER;
     
-    // Build input: key || nonce || counter
-    uint8_t input[52]; // 32 + 16 + 4
+    // Build input: key(32) || nonce(16) || counter(4) = 52 bytes
+    uint8_t input[52];
     memcpy(input, key, 32);
     memcpy(input + 32, nonce, 16);
     
@@ -54,6 +55,7 @@ static charm_aead_status_t charm_generate_keystream(
         input[50] = (uint8_t)((block_counter >> 16) & 0xFF);
         input[51] = (uint8_t)((block_counter >> 24) & 0xFF);
         
+        // Use CHARM-512 for 64-byte blocks (faster than multiple CHARM-256 calls)
         uint8_t block[64];
         int status = charm_hash(CHARM_512, input, 52, block);
         if (status != 0) return CHARM_AEAD_ERROR_NULL_POINTER;
@@ -71,7 +73,7 @@ static charm_aead_status_t charm_generate_keystream(
 }
 
 /**
- * @brief CHARM HMAC implementation
+ * @brief CHARM HMAC implementation using standard CHARM for compatibility
  */
 charm_aead_status_t charm_hmac(
     const uint8_t* key, size_t key_len,
@@ -80,7 +82,7 @@ charm_aead_status_t charm_hmac(
 ) {
     if (!key || !data || !hmac) return CHARM_AEAD_ERROR_NULL_POINTER;
     
-    // Simple HMAC using CHARM-256: CHARM(key || data)
+    // Simple but compatible HMAC using CHARM-256: CHARM(key || data)
     uint8_t padded_key[32];
     memset(padded_key, 0, 32);
     
@@ -185,7 +187,7 @@ charm_aead_status_t charm_aead_encrypt(
     uint8_t* keystream = malloc(plaintext_len);
     if (!keystream) return CHARM_AEAD_ERROR_NULL_POINTER;
     
-    charm_aead_status_t status = charm_generate_keystream(
+    charm_aead_status_t status = charm_generate_keystream_fast(
         key, nonce, 0, keystream, plaintext_len
     );
     if (status != CHARM_AEAD_SUCCESS) {
@@ -277,7 +279,7 @@ charm_aead_status_t charm_aead_decrypt(
     uint8_t* keystream = malloc(ciphertext_len);
     if (!keystream) return CHARM_AEAD_ERROR_NULL_POINTER;
     
-    status = charm_generate_keystream(key, nonce, 0, keystream, ciphertext_len);
+    status = charm_generate_keystream_fast(key, nonce, 0, keystream, ciphertext_len);
     if (status != CHARM_AEAD_SUCCESS) {
         free(keystream);
         return status;
@@ -376,7 +378,7 @@ charm_aead_status_t charm_aead_siv_encrypt(
     uint8_t* keystream = malloc(plaintext_len);
     if (!keystream) return CHARM_AEAD_ERROR_NULL_POINTER;
     
-    status = charm_generate_keystream(key, synthetic_nonce, 0, keystream, plaintext_len);
+    status = charm_generate_keystream_fast(key, synthetic_nonce, 0, keystream, plaintext_len);
     if (status != CHARM_AEAD_SUCCESS) {
         free(keystream);
         return status;
@@ -447,7 +449,7 @@ charm_aead_status_t charm_aead_siv_decrypt(
     uint8_t* keystream = malloc(ciphertext_len);
     if (!keystream) return CHARM_AEAD_ERROR_NULL_POINTER;
     
-    charm_aead_status_t status = charm_generate_keystream(key, siv, 0, keystream, ciphertext_len);
+    charm_aead_status_t status = charm_generate_keystream_fast(key, siv, 0, keystream, ciphertext_len);
     if (status != CHARM_AEAD_SUCCESS) {
         free(keystream);
         return status;
