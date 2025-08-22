@@ -129,7 +129,7 @@ The underlying CHARM algorithm provides the entropy-native foundation: CHARM/1.0
 ### 2. **CEE – Chaotic Entropy Expansion**  
    Generates and amplifies structured entropy to enhance unpredictability, performance, and cryptographic resilience.
 
-3. **ECE – Entropic Collapse Engine**  
+### 3. **ECE – Entropic Collapse Engine**  
    Stabilizes over-chaotic states by compressing excessive entropy into coherent outputs, ensuring consistent and secure operation.
 
 Together, these modules make CHARM a self-regulating, high-performance hashing framework.
@@ -243,9 +243,10 @@ Detailed documentation is available in the `documents` directory:
 
 - **[Foundational CHARM (src/)](src/)**: Core entropy-native cryptographic framework with ECE, CAEDS, and CEE implementations
 - **[CHARM Algorithm (algorithm/)](algorithm/)**: Reference and library implementations of the CHARM hash algorithm with frozen specification
+- **[CHARM AEAD (algorithm/aead/)](algorithm/aead/)**: Enterprise-grade authenticated encryption with misuse-resistant SIV variant using CHARM-512
 - **[CHARM-B](CHARM-B/README.md)**: Ultra-small input optimized hash with comprehensive performance analysis
+- **[CHARM-B AEAD](CHARM-B/AEAD/README.md)**: Ultra-fast AEAD for constrained environments with SIV support
 - **[AEAD/AEAS](AEAD/AEAS/README.md)**: Authenticated encryption experiments with performance studies  
-- **[CHARM-B AEAD](CHARM-B/AEAD/README.md)**: Entropy-native AEAD for constrained environments
 - **[Security Suite (src/crypto/)](src/crypto/)**: Enterprise-grade security platform with comprehensive security services
 - **[Conformance Testing](documents/Conformance-Testing.md)**: NIST-style validation framework
 

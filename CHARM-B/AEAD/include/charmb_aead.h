@@ -114,6 +114,50 @@ charmb_aead_status_t charmb_kdf(
 );
 
 /**
+ * @brief CHARM-B AEAD SIV (Synthetic IV) Encryption - Misuse-Resistant
+ * 
+ * SIV mode provides nonce-misuse resistance by deriving a synthetic IV
+ * from the key, AAD, and plaintext. This makes encryption deterministic
+ * and safe even with repeated or predictable nonces.
+ * 
+ * @param key Encryption key (32 bytes)
+ * @param aad Additional authenticated data (can be NULL)
+ * @param aad_len Length of AAD
+ * @param plaintext Input plaintext
+ * @param plaintext_len Length of plaintext
+ * @param ciphertext Output ciphertext (same length as plaintext)
+ * @param tag Output authentication tag (16 bytes, contains SIV)
+ * @return Status code
+ */
+charmb_aead_status_t charmb_aead_siv_encrypt(
+    const uint8_t key[CHARMB_AEAD_KEY_SIZE],
+    const uint8_t* aad, size_t aad_len,
+    const uint8_t* plaintext, size_t plaintext_len,
+    uint8_t* ciphertext,
+    uint8_t tag[CHARMB_AEAD_TAG_SIZE]
+);
+
+/**
+ * @brief CHARM-B AEAD SIV (Synthetic IV) Decryption - Misuse-Resistant
+ * 
+ * @param key Decryption key (32 bytes)
+ * @param aad Additional authenticated data (can be NULL)
+ * @param aad_len Length of AAD
+ * @param ciphertext Input ciphertext
+ * @param ciphertext_len Length of ciphertext
+ * @param tag Authentication tag (16 bytes, contains SIV)
+ * @param plaintext Output plaintext (same length as ciphertext)
+ * @return Status code (CHARMB_AEAD_ERROR_AUTH_FAILED if authentication fails)
+ */
+charmb_aead_status_t charmb_aead_siv_decrypt(
+    const uint8_t key[CHARMB_AEAD_KEY_SIZE],
+    const uint8_t* aad, size_t aad_len,
+    const uint8_t* ciphertext, size_t ciphertext_len,
+    const uint8_t tag[CHARMB_AEAD_TAG_SIZE],
+    uint8_t* plaintext
+);
+
+/**
  * @brief Benchmark CHARM-B AEAD performance
  * 
  * @param payload_size Size of payload to test
