@@ -66,3 +66,8 @@ libblake3.a
 
 # Conformance test reports (timestamped)
 conformance/nist/reports/*.json
+
+# Generated key and log files (security sensitive)
+keystore/*.key
+keystore/*.meta
+logs/*.log
