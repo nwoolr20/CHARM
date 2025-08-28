@@ -20,6 +20,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 #include "charm.h"
 
@@ -56,8 +58,15 @@ int snapshot_logger_init(void) {
         return 0;
     }
     
-    // Create logs directory if it doesn't exist
-    system("mkdir -p ./logs");
+    // Create logs directory if it doesn't exist (secure way)
+    struct stat st = {0};
+    if (stat("./logs", &st) == -1) {
+        if (mkdir("./logs", 0755) != 0) {
+            fprintf(stderr, "Failed to create logs directory: %s\n", strerror(errno));
+            pthread_mutex_unlock(&snapshot_mutex);
+            return -1;
+        }
+    }
     
     // Open log file
     snapshot_log_file = fopen(SNAPSHOT_LOG_PATH, "a");

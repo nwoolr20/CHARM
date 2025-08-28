@@ -31,6 +31,9 @@ typedef struct {
 
 static charm_key_manager_state_t g_key_manager = {0};
 
+// Forward declaration for secure random bytes
+extern int rng_linux_get_bytes(uint8_t* buffer, size_t size);
+
 // Helper function to generate secure key ID
 static int generate_key_id(char* key_id_out) {
     uint8_t entropy[KEY_ID_ENTROPY_SIZE];
@@ -42,9 +45,9 @@ static int generate_key_id(char* key_id_out) {
         return -1;
     }
     
-    // Generate random bytes for key ID
-    for (size_t i = 0; i < KEY_ID_ENTROPY_SIZE; i++) {
-        entropy[i] = (uint8_t)(rand() ^ (time(NULL) + i));
+    // Generate cryptographically secure random bytes for key ID
+    if (rng_linux_get_bytes(entropy, KEY_ID_ENTROPY_SIZE) != (int)KEY_ID_ENTROPY_SIZE) {
+        return -1;
     }
     
     // Hash entropy to create deterministic but unpredictable key ID
@@ -208,37 +211,39 @@ int charm_key_generate(const charm_key_generation_params_t* params, char* key_id
         return -1;
     }
     
-    // Save key material to file
+    // Save key material to file with restrictive permissions
     char key_file_path[256];
     get_key_file_path(key_id, key_file_path);
     
-    FILE* key_file = fopen(key_file_path, "wb");
-    if (!key_file) {
+    // Create file with restricted permissions (owner read/write only)
+    int key_fd = open(key_file_path, O_CREAT | O_WRONLY | O_TRUNC, 0600);
+    if (key_fd < 0) {
         return -errno;
     }
     
-    size_t written = fwrite(key_material, 1, key_size, key_file);
-    fclose(key_file);
+    ssize_t written = write(key_fd, key_material, key_size);
+    close(key_fd);
     
-    if (written != key_size) {
+    if (written != (ssize_t)key_size) {
         unlink(key_file_path); // Clean up partial file
         return -EIO;
     }
     
-    // Save metadata to file
+    // Save metadata to file with restrictive permissions
     char meta_file_path[256];
     get_metadata_file_path(key_id, meta_file_path);
     
-    FILE* meta_file = fopen(meta_file_path, "wb");
-    if (!meta_file) {
+    // Create metadata file with restricted permissions (owner read/write only)
+    int meta_fd = open(meta_file_path, O_CREAT | O_WRONLY | O_TRUNC, 0600);
+    if (meta_fd < 0) {
         unlink(key_file_path); // Clean up key file
         return -errno;
     }
     
-    written = fwrite(&metadata, 1, sizeof(metadata), meta_file);
-    fclose(meta_file);
+    ssize_t meta_written = write(meta_fd, &metadata, sizeof(metadata));
+    close(meta_fd);
     
-    if (written != sizeof(metadata)) {
+    if (meta_written != (ssize_t)sizeof(metadata)) {
         unlink(key_file_path);
         unlink(meta_file_path);
         return -EIO;
