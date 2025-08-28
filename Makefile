@@ -15,7 +15,7 @@ CFLAGS = -Wall -Wextra -std=c99 -O3 -flto -ffast-math -funroll-loops \
 # to ensure compatibility. On AVX512-capable systems, manually add -mavx512f
 
 # Linker flags
-LDFLAGS = -pthread -lm -lssl -lcrypto -flto -L. -lblake3
+LDFLAGS = -pthread -lm -lssl -lcrypto -flto
 
 # Directories
 SRC_DIR = src
@@ -119,7 +119,7 @@ core: $(CORE_OBJECTS)
 # Build comprehensive benchmark
 bench: $(BUILD_DIR)/benchmark_comprehensive.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o 
 	@echo "Building comprehensive benchmark..."
-	$(CC) $(CFLAGS) -DHAVE_BLAKE3 -o $(COMPREHENSIVE_BENCH) $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $(COMPREHENSIVE_BENCH) $^ $(LDFLAGS)
 
 # Build enhanced comprehensive benchmark
 enhanced: $(BUILD_DIR)/benchmark_enhanced.o $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o 

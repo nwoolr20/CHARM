@@ -1,0 +1,39 @@
+CHARM Comprehensive Benchmark Tool
+==================================
+
+CHARM Performance Benchmark
+===========================
+
+Testing entropy-native hashing against established algorithms
+
+Size       | Algorithm    | Time (ms)    | Throughput      | Digest (first 16 bytes)
+-----------+--------------+--------------+-----------------+---------------------------------
+64         | CHARM        |    0.001 ms |    66.95 MB/s | 149fb48d1e2f32bebcfaa682ec62f7f6
+64         | SHA-256      |    0.001 ms |   101.71 MB/s | b99228f69db22b359a008e8f694e1f2e
+
+256        | CHARM        |    0.000 ms |   919.90 MB/s | d753f4763f35f33dd4797f278948355a
+256        | SHA-256      |    0.000 ms |  1138.72 MB/s | cc7543aa25307e9f59048a53b59da726
+
+1024       | CHARM        |    0.000 ms |  4710.87 MB/s | 14cbcd2c3e35e654c70303831f776ca8
+1024       | SHA-256      |    0.001 ms |  1418.80 MB/s | 0154918c0ec3df0047f7689ea190c3b0
+
+4096       | CHARM        |    0.003 ms |  1460.28 MB/s | fcdff2d737e1e3cdbc845ac9c389342c
+4096       | SHA-256      |    0.003 ms |  1501.36 MB/s | 705693dc06689f7643de7d0c9c5b5c2a
+
+16384      | CHARM        |    0.005 ms |  2903.14 MB/s | 2c5d5fc4c9826556b272d9b623843600
+16384      | SHA-256      |    0.010 ms |  1525.55 MB/s | 6353fbd80a44b61e852d3143a3ad232c
+
+65536      | CHARM        |    0.011 ms |  5442.54 MB/s | 3acb66d26bba64e689abc4e134d9cc60
+65536      | SHA-256      |    0.044 ms |  1412.36 MB/s | ec71ce6fb5f7ee95d608eee31d4ce25c
+
+262144     | CHARM        |    0.046 ms |  5432.02 MB/s | 34cea21bbad7f0223dcc62266d10340b
+262144     | SHA-256      |    0.167 ms |  1501.12 MB/s | 566aec31b6a69ac51caa1ce487c9f693
+
+Benchmark complete!
+
+CHARM Features:
+- Entropy-native design with quantum field collapse simulation
+- SIMD-accelerated chaos injection and entropy diffusion
+- Ternary logic gates and trampoline mappings
+- Temporal entropy mixing with avalanche effects
+- Designed to exceed conventional hash function performance
