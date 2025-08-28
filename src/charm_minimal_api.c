@@ -79,7 +79,7 @@ void charm_digest_to_hex(const uint8_t* digest, char* hex_str) {
     }
     
     for (int i = 0; i < 32; i++) {
-        sprintf(hex_str + (i * 2), "%02x", digest[i]);
+        snprintf(hex_str + (i * 2), 3, "%02x", digest[i]);
     }
     hex_str[64] = '\0';
 }
@@ -92,10 +92,22 @@ double charm_get_entropy_quality(void) {
 
 // Feed external entropy into the system (dummy implementation)
 int charm_feed_entropy(const void* data, size_t len) {
-    (void)data;
-    (void)len;
-    // Just seed the random number generator for our simple demo
-    srand(time(NULL));
+    // Mix provided entropy data into the random state
+    if (data && len > 0) {
+        const uint8_t* bytes = (const uint8_t*)data;
+        unsigned int mixed_seed = (unsigned int)time(NULL);
+        
+        // Mix in the provided data bytes
+        for (size_t i = 0; i < len; i++) {
+            mixed_seed ^= (bytes[i] << ((i % 4) * 8));
+            mixed_seed = mixed_seed * 1103515245 + 12345; // LCG mixing
+        }
+        
+        srand(mixed_seed);
+    } else {
+        // Fallback to time-based seeding
+        srand(time(NULL));
+    }
     return 0;
 }
 

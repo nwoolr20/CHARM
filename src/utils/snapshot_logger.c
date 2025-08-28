@@ -32,7 +32,7 @@
 typedef struct {
     time_t timestamp;
     uint64_t sequence_id;
-    charm_entropy_state_t entropy_state;
+    charm_system_state_t entropy_state;
     double entropy_density;
     uint32_t anomaly_count;
     uint32_t source_flags;
@@ -97,7 +97,7 @@ int snapshot_logger_init(void) {
 /**
  * Capture an entropy snapshot with the current system state
  */
-int snapshot_logger_capture(charm_entropy_state_t state, 
+int snapshot_logger_capture(charm_system_state_t state, 
                            double entropy_density,
                            uint32_t anomaly_count,
                            uint32_t source_flags,
@@ -130,7 +130,8 @@ int snapshot_logger_capture(charm_entropy_state_t state,
         strncpy(snapshot->source_description, source_description, 127);
         snapshot->source_description[127] = '\0';
     } else {
-        strcpy(snapshot->source_description, "Unknown");
+        strncpy(snapshot->source_description, "Unknown", 127);
+        snapshot->source_description[127] = '\0';
     }
     
     // Write to log file
@@ -239,7 +240,7 @@ entropy_snapshot_t *snapshot_logger_get_latest(void) {
  */
 void snapshot_logger_critical_event(const char *event_type, 
                                    const char *description,
-                                   charm_entropy_state_t state) {
+                                   charm_system_state_t state) {
     if (!logging_initialized) {
         if (snapshot_logger_init() != 0) {
             return;

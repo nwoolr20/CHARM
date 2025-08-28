@@ -3,6 +3,7 @@
 #include "crypto/auth.h"
 #include "crypto/audit.h"
 #include "charm_api.h"
+#include "system_entropy.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +38,9 @@ static int password_adapter_authenticate(const char* credentials, charm_auth_con
     
     // Parse credentials (format: "username:password")
     char* cred_copy = strdup(credentials);
+    if (!cred_copy) {
+        return CHARM_AUTH_FAILURE;
+    }
     char* username = strtok(cred_copy, ":");
     char* password = strtok(NULL, ":");
     
@@ -66,8 +70,17 @@ static int password_adapter_authenticate(const char* credentials, charm_auth_con
         
         // Generate session token
         uint8_t token_seed[64];
-        snprintf((char*)token_seed, sizeof(token_seed), "%s:%ld:%d", 
-                username, context->auth_time, rand());
+        // Use cryptographically secure entropy instead of rand()
+        uint8_t random_bytes[16];
+        system_entropy_extract_fast(random_bytes, sizeof(random_bytes));
+        
+        snprintf((char*)token_seed, sizeof(token_seed), "%s:%ld:", 
+                username, context->auth_time);
+        // Append the secure random bytes as hex
+        for (int i = 0; i < 16; i++) {
+            snprintf((char*)token_seed + strlen((char*)token_seed), 
+                    sizeof(token_seed) - strlen((char*)token_seed), "%02x", random_bytes[i]);
+        }
         
         uint8_t token_hash[32];
         if (charm_digest_compute(token_seed, strlen((char*)token_seed), token_hash) == 0) {
