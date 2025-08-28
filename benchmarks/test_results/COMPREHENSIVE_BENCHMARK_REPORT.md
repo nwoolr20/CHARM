@@ -14,8 +14,8 @@ CHARM (Chaotic Hierarchical Adaptive Resilient Mechanism) has been **comprehensi
 
 ## System Configuration
 
-- **Test Date**: August 19, 2025 at 14:43:38 UTC
-- **Platform**: Linux pkrvmubgrv54qmi 6.11.0-1018-azure #18~24.04.1-Ubuntu SMP Sat Jun 28 04:46:03 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
+- **Test Date**: August 28, 2025 at 08:03:18 UTC
+- **Platform**: Linux pkrvmccyg1gnepe 6.11.0-1018-azure #18~24.04.1-Ubuntu SMP Sat Jun 28 04:46:03 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
 - **Compiler**: gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0
 - **CPU Features**: AVX2 supported, AVX512 ready (code implemented)
 - **Compilation Flags**: `-O3 -mavx2 -march=native -flto`
@@ -34,24 +34,24 @@ CHARM (Chaotic Hierarchical Adaptive Resilient Mechanism) has been **comprehensi
 ```
 Size       | Algorithm    | Time (ms)    | Throughput      | Digest (first 16 bytes)
 -----------+--------------+--------------+-----------------+---------------------------------
-64         | CHARM        |    0.001 ms |    98.10 MB/s | 2f1f187ddbc3538bd3145135c96dad8c
-64         | SHA-256      |    0.001 ms |   100.68 MB/s | b99228f69db22b359a008e8f694e1f2e
-64         | BLAKE3       |    0.000 ms |   499.06 MB/s | 962b5397f66b5cdbbadfbf38a8524ae7
-256        | CHARM        |    0.000 ms |  2388.85 MB/s | d582edd53827d4c1fb0431bc574e6316
-256        | SHA-256      |    0.000 ms |  1133.43 MB/s | cc7543aa25307e9f59048a53b59da726
-256        | BLAKE3       |    0.000 ms |   723.17 MB/s | 52db888b27f2c87b65b1afef16fe2b69
-1024       | CHARM        |    0.000 ms | 10948.01 MB/s | 4c8f949fbde30aa2b651e2430a5b85e3
-1024       | SHA-256      |    0.001 ms |  1412.65 MB/s | 0154918c0ec3df0047f7689ea190c3b0
-1024       | BLAKE3       |    0.001 ms |   767.50 MB/s | bdba315fd738bdad7c639af86e6c0150
-4096       | CHARM        |    0.003 ms |  1552.75 MB/s | 5fa0766dc5e4d4281998753ab7fc9c11
-4096       | SHA-256      |    0.003 ms |  1501.31 MB/s | 705693dc06689f7643de7d0c9c5b5c2a
-4096       | BLAKE3       |    0.003 ms |  1299.23 MB/s | d365fdbcf4c86d4e3dfb6b8c2123902d
-16384      | CHARM        |    0.003 ms |  5357.63 MB/s | 28a787ccf2015d85d4e0c90312776955
-16384      | SHA-256      |    0.010 ms |  1525.27 MB/s | 6353fbd80a44b61e852d3143a3ad232c
-16384      | BLAKE3       |    0.007 ms |  2393.06 MB/s | b72b79e7100a129434f2976bdf52574e
-65536      | CHARM        |    0.011 ms |  5600.36 MB/s | fc4e3c64b60c3ac93cafc4696a693e1f
+64         | CHARM        |    0.001 ms |    74.29 MB/s | 149fb48d1e2f32bebcfaa682ec62f7f6
+64         | SHA-256      |    0.001 ms |   111.79 MB/s | b99228f69db22b359a008e8f694e1f2e
+64         | BLAKE3       |    0.000 ms |   503.59 MB/s | 962b5397f66b5cdbbadfbf38a8524ae7
+256        | CHARM        |    0.000 ms |   902.55 MB/s | d753f4763f35f33dd4797f278948355a
+256        | SHA-256      |    0.000 ms |  1143.52 MB/s | cc7543aa25307e9f59048a53b59da726
+256        | BLAKE3       |    0.000 ms |   716.80 MB/s | 52db888b27f2c87b65b1afef16fe2b69
+1024       | CHARM        |    0.000 ms |  4686.00 MB/s | 14cbcd2c3e35e654c70303831f776ca8
+1024       | SHA-256      |    0.001 ms |  1418.80 MB/s | 0154918c0ec3df0047f7689ea190c3b0
+1024       | BLAKE3       |    0.001 ms |   768.10 MB/s | bdba315fd738bdad7c639af86e6c0150
+4096       | CHARM        |    0.003 ms |  1427.15 MB/s | fcdff2d737e1e3cdbc845ac9c389342c
+4096       | SHA-256      |    0.003 ms |  1504.20 MB/s | 705693dc06689f7643de7d0c9c5b5c2a
+4096       | BLAKE3       |    0.003 ms |  1295.35 MB/s | d365fdbcf4c86d4e3dfb6b8c2123902d
+16384      | CHARM        |    0.003 ms |  5135.07 MB/s | 2c5d5fc4c9826556b272d9b623843600
+16384      | SHA-256      |    0.010 ms |  1525.55 MB/s | 6353fbd80a44b61e852d3143a3ad232c
+16384      | BLAKE3       |    0.007 ms |  2383.20 MB/s | b72b79e7100a129434f2976bdf52574e
+65536      | CHARM        |    0.011 ms |  5607.44 MB/s | 3acb66d26bba64e689abc4e134d9cc60
 65536      | SHA-256      |    0.041 ms |  1530.87 MB/s | ec71ce6fb5f7ee95d608eee31d4ce25c
-65536      | BLAKE3       |    0.025 ms |  2462.61 MB/s | 25be7a0b11526bc064bcf43f94ad459c
+65536      | BLAKE3       |    0.028 ms |  2199.75 MB/s | 25be7a0b11526bc064bcf43f94ad459c
 ```
 
 ### Performance Improvement Summary
@@ -77,33 +77,33 @@ Testing entropy-native hashing against established algorithms
 
 Size       | Algorithm    | Time (ms)    | Throughput      | Digest (first 16 bytes)
 -----------+--------------+--------------+-----------------+---------------------------------
-64         | CHARM        |    0.001 ms |    98.10 MB/s | 2f1f187ddbc3538bd3145135c96dad8c
-64         | SHA-256      |    0.001 ms |   100.68 MB/s | b99228f69db22b359a008e8f694e1f2e
-64         | BLAKE3       |    0.000 ms |   499.06 MB/s | 962b5397f66b5cdbbadfbf38a8524ae7
+64         | CHARM        |    0.001 ms |    74.29 MB/s | 149fb48d1e2f32bebcfaa682ec62f7f6
+64         | SHA-256      |    0.001 ms |   111.79 MB/s | b99228f69db22b359a008e8f694e1f2e
+64         | BLAKE3       |    0.000 ms |   503.59 MB/s | 962b5397f66b5cdbbadfbf38a8524ae7
 
-256        | CHARM        |    0.000 ms |  2388.85 MB/s | d582edd53827d4c1fb0431bc574e6316
-256        | SHA-256      |    0.000 ms |  1133.43 MB/s | cc7543aa25307e9f59048a53b59da726
-256        | BLAKE3       |    0.000 ms |   723.17 MB/s | 52db888b27f2c87b65b1afef16fe2b69
+256        | CHARM        |    0.000 ms |   902.55 MB/s | d753f4763f35f33dd4797f278948355a
+256        | SHA-256      |    0.000 ms |  1143.52 MB/s | cc7543aa25307e9f59048a53b59da726
+256        | BLAKE3       |    0.000 ms |   716.80 MB/s | 52db888b27f2c87b65b1afef16fe2b69
 
-1024       | CHARM        |    0.000 ms | 10948.01 MB/s | 4c8f949fbde30aa2b651e2430a5b85e3
-1024       | SHA-256      |    0.001 ms |  1412.65 MB/s | 0154918c0ec3df0047f7689ea190c3b0
-1024       | BLAKE3       |    0.001 ms |   767.50 MB/s | bdba315fd738bdad7c639af86e6c0150
+1024       | CHARM        |    0.000 ms |  4686.00 MB/s | 14cbcd2c3e35e654c70303831f776ca8
+1024       | SHA-256      |    0.001 ms |  1418.80 MB/s | 0154918c0ec3df0047f7689ea190c3b0
+1024       | BLAKE3       |    0.001 ms |   768.10 MB/s | bdba315fd738bdad7c639af86e6c0150
 
-4096       | CHARM        |    0.003 ms |  1552.75 MB/s | 5fa0766dc5e4d4281998753ab7fc9c11
-4096       | SHA-256      |    0.003 ms |  1501.31 MB/s | 705693dc06689f7643de7d0c9c5b5c2a
-4096       | BLAKE3       |    0.003 ms |  1299.23 MB/s | d365fdbcf4c86d4e3dfb6b8c2123902d
+4096       | CHARM        |    0.003 ms |  1427.15 MB/s | fcdff2d737e1e3cdbc845ac9c389342c
+4096       | SHA-256      |    0.003 ms |  1504.20 MB/s | 705693dc06689f7643de7d0c9c5b5c2a
+4096       | BLAKE3       |    0.003 ms |  1295.35 MB/s | d365fdbcf4c86d4e3dfb6b8c2123902d
 
-16384      | CHARM        |    0.003 ms |  5357.63 MB/s | 28a787ccf2015d85d4e0c90312776955
-16384      | SHA-256      |    0.010 ms |  1525.27 MB/s | 6353fbd80a44b61e852d3143a3ad232c
-16384      | BLAKE3       |    0.007 ms |  2393.06 MB/s | b72b79e7100a129434f2976bdf52574e
+16384      | CHARM        |    0.003 ms |  5135.07 MB/s | 2c5d5fc4c9826556b272d9b623843600
+16384      | SHA-256      |    0.010 ms |  1525.55 MB/s | 6353fbd80a44b61e852d3143a3ad232c
+16384      | BLAKE3       |    0.007 ms |  2383.20 MB/s | b72b79e7100a129434f2976bdf52574e
 
-65536      | CHARM        |    0.011 ms |  5600.36 MB/s | fc4e3c64b60c3ac93cafc4696a693e1f
+65536      | CHARM        |    0.011 ms |  5607.44 MB/s | 3acb66d26bba64e689abc4e134d9cc60
 65536      | SHA-256      |    0.041 ms |  1530.87 MB/s | ec71ce6fb5f7ee95d608eee31d4ce25c
-65536      | BLAKE3       |    0.025 ms |  2462.61 MB/s | 25be7a0b11526bc064bcf43f94ad459c
+65536      | BLAKE3       |    0.028 ms |  2199.75 MB/s | 25be7a0b11526bc064bcf43f94ad459c
 
-262144     | CHARM        |    0.045 ms |  5611.74 MB/s | f08f25abeff4c5c815c3d512da31fa99
-262144     | SHA-256      |    0.166 ms |  1508.96 MB/s | 566aec31b6a69ac51caa1ce487c9f693
-262144     | BLAKE3       |    0.102 ms |  2451.58 MB/s | 7b5502285e0fb20094f9c0c2c0e268a2
+262144     | CHARM        |    0.044 ms |  5619.96 MB/s | 34cea21bbad7f0223dcc62266d10340b
+262144     | SHA-256      |    0.167 ms |  1501.08 MB/s | 566aec31b6a69ac51caa1ce487c9f693
+262144     | BLAKE3       |    0.103 ms |  2435.48 MB/s | 7b5502285e0fb20094f9c0c2c0e268a2
 
 Benchmark complete!
 
@@ -246,13 +246,13 @@ CHARM Features:
 ✅ **PASSED** - CHARM successfully generates cryptographic digests from various inputs
 
 ### Consistency Tests
-✅ **PASSED** - Identical inputs consistently produce identical digest outputs\n- Test Digest: `60a31d33482efd5949355443c34210eacf814bdebbc659fcc02460654b9ceb47`
+✅ **PASSED** - Identical inputs consistently produce identical digest outputs\n- Test Digest: `a8ad3fe48cd92b2fe82756157d79fd9f13ed9e591162b7f14ce0394d4b92315e`
 
 ### Avalanche Effect Tests
-✅ **EXCELLENT** - Single character change produced 115 bit differences (>25% of output)\n- Input A: `test` → `7129bc6d98948c8d99b7ce007d183757c5e4b2f3b82df06899b7ce007d183757`\n- Input B: `tesT` → `3a77de502cf02a4ff0ed8a3cebbd7394acbef6cf2e88b4abf0ed8a3cebbd7394`
+✅ **EXCELLENT** - Single character change produced 128 bit differences (>25% of output)\n- Input A: `test` → `813c9a706bb61d8f26f1f79287e57ede62794933952e9a3a2e1930da35ed8125`\n- Input B: `tesT` → `097b65fe6275d252bf870d5f47b32ad550832fa9aff65e4e3f2b72c1abb7fa2c`
 
 ### Large File Processing Tests
-✅ **PASSED** - Successfully processed 1MB file in .003104471s\n- Throughput: 322.11 MB/s
+✅ **PASSED** - Successfully processed 1MB file in .003188503s\n- Throughput: 313.62 MB/s
 
 ### Performance Benchmark Status
 ✅ **COMPLETED** - Comprehensive performance analysis finished
@@ -269,27 +269,27 @@ Digest Comparison Test
 ======================
 
 Input: "(empty)" (0 bytes)
-CHARM:   0000000000000000000000000000000000000000000000000000000000000000
+CHARM:   b8174081329324dd760eade0e5077dfcdcfc320be022a057345be2ca5e9a5037
 SHA-256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 BLAKE3:  af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
 
 Input: "a" (1 bytes)
-CHARM:   a9811266bc84fb6c21baa9c16695c58bd83b7e4ff98db86321baa9c16695c58b
+CHARM:   c79b267a34ebc4c9c2f606de7bdae8a1eda231a8f0e8c546c9a4f0afa1bc637d
 SHA-256: ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb
 BLAKE3:  17762fddd969a453925d65717ac3eea21320b66b54342fde15128d6caf21215f
 
 Input: "abc" (3 bytes)
-CHARM:   270b6eda8120768700242ef846bd40a4fa74da52e9b80f0e00242ef846bd40a4
+CHARM:   7e9c25bbf2208b1d2038f2fb507150f5be2e9ccb8ab3eada6f6781606ab6904c
 SHA-256: ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
 BLAKE3:  6437b3ac38465133ffb63b75273a8db548c558465d79db03fd359c6cd5bd9d85
 
 Input: "The quick brown fox jumps over the lazy dog" (43 bytes)
-CHARM:   09359161e6aa83f07239a986aa5dbc23b5cc44ae887014aaff80a7ffdbc32826
+CHARM:   85f35632341dcf57e052cb4bcf1be60c3f5982d13ae8149ed0a16724a2387e74
 SHA-256: d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592
 BLAKE3:  2f1514181aadccd913abd94cfa592701a5686ab23f8df1dff1b74710febc6d4a
 
 Input: "CHARM is a revolutionary entropy-native hashing system" (54 bytes)
-CHARM:   00b76e2e87d9e5414279f51925e326fccb1c0172d22b87d17e58630581286a14
+CHARM:   48534da8456e957bdef409431e71d020554caf92f6a7217c806de5d9a54ac47e
 SHA-256: 4089b0f24e58900f4e86bddd6ec8dd5f1716b711c6243e834fb69069b9aa42c8
 BLAKE3:  aab4c96a7572253b74b1e558f57873a3583f07b7e9d2e309e89269867fdf5a74
 
@@ -403,7 +403,7 @@ ece_config_t secure_config = {
 ## Technical Appendix
 
 ### System Information
-- **Platform**: Linux pkrvmubgrv54qmi 6.11.0-1018-azure #18~24.04.1-Ubuntu SMP Sat Jun 28 04:46:03 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
+- **Platform**: Linux pkrvmccyg1gnepe 6.11.0-1018-azure #18~24.04.1-Ubuntu SMP Sat Jun 28 04:46:03 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
 - **Compiler**: gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0
 - **CHARM Version**: CHARM - Chaotic Hierarchical Adaptive Resilient Mechanism
 - **Build Configuration**: Optimized with `-O3 -mavx2 -march=native`
@@ -415,7 +415,7 @@ ece_config_t secure_config = {
 - **Statistical Method**: Average of multiple runs with outlier removal
 
 ### Test Environment
-- **Test Timestamp**: 20250819_144337
+- **Test Timestamp**: 20250828_080316
 - **Results Directory**: `benchmarks/test_results/`
 - **Iterations**: Variable per test type
 - **Warmup Rounds**: Included for performance tests
@@ -423,6 +423,6 @@ ece_config_t secure_config = {
 ---
 
 *Generated by CHARM Unified Test & Benchmark Suite*  
-*Report Generated: 2025-08-19 14:43:38 UTC*  
+*Report Generated: 2025-08-28 08:03:18 UTC*  
 *Status: PRODUCTION READY*  
 *Security Level: QUANTUM-RESISTANT*
