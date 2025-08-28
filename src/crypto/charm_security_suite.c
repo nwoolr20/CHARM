@@ -296,7 +296,8 @@ int charm_security_suite_health_check(char issues[][256], size_t max_issues, siz
     // Check core crypto availability
     if (!g_suite_state.status.crypto_available) {
         if (*issue_count < max_issues) {
-            strcpy(issues[*issue_count], "Core cryptographic services unavailable");
+            strncpy(issues[*issue_count], "Core cryptographic services unavailable", 255);
+            issues[*issue_count][255] = '\0';
             (*issue_count)++;
         }
         health_score -= 30;
@@ -316,7 +317,8 @@ int charm_security_suite_health_check(char issues[][256], size_t max_issues, siz
     // Check for emergency lockdown
     if (g_suite_state.emergency_lockdown) {
         if (*issue_count < max_issues) {
-            strcpy(issues[*issue_count], "System in emergency lockdown mode");
+            strncpy(issues[*issue_count], "System in emergency lockdown mode", 255);
+            issues[*issue_count][255] = '\0';
             (*issue_count)++;
         }
         health_score -= 50;
@@ -325,7 +327,8 @@ int charm_security_suite_health_check(char issues[][256], size_t max_issues, siz
     // Check audit system
     if (!g_suite_state.status.audit_available) {
         if (*issue_count < max_issues) {
-            strcpy(issues[*issue_count], "Audit logging system unavailable");
+            strncpy(issues[*issue_count], "Audit logging system unavailable", 255);
+            issues[*issue_count][255] = '\0';
             (*issue_count)++;
         }
         health_score -= 15;
@@ -334,7 +337,8 @@ int charm_security_suite_health_check(char issues[][256], size_t max_issues, siz
     // Check key management
     if (!g_suite_state.status.key_mgmt_available) {
         if (*issue_count < max_issues) {
-            strcpy(issues[*issue_count], "Key management system unavailable");
+            strncpy(issues[*issue_count], "Key management system unavailable", 255);
+            issues[*issue_count][255] = '\0';
             (*issue_count)++;
         }
         health_score -= 20;
@@ -343,7 +347,8 @@ int charm_security_suite_health_check(char issues[][256], size_t max_issues, siz
     // Check authentication
     if (!g_suite_state.status.auth_available) {
         if (*issue_count < max_issues) {
-            strcpy(issues[*issue_count], "Authentication system unavailable");
+            strncpy(issues[*issue_count], "Authentication system unavailable", 255);
+            issues[*issue_count][255] = '\0';
             (*issue_count)++;
         }
         health_score -= 15;
