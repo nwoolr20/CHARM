@@ -22,7 +22,7 @@
 
 // BLAKE3 - conditional include
 #include "blake3.h"
-#define BLAKE3_AVAILABLE 1
+#define BLAKE3_AVAILABLE 0
 
 // Test parameters
 #define MIN_SIZE 64
