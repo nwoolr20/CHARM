@@ -7,6 +7,7 @@
 
 #include "crypto/key_manager.h"
 #include "charm_api.h"
+#include "system_entropy.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,9 +43,9 @@ static int generate_key_id(char* key_id_out) {
         return -1;
     }
     
-    // Generate random bytes for key ID
-    for (size_t i = 0; i < KEY_ID_ENTROPY_SIZE; i++) {
-        entropy[i] = (uint8_t)(rand() ^ (time(NULL) + i));
+    // Generate random bytes for key ID using secure entropy
+    if (system_entropy_extract_fast(entropy, KEY_ID_ENTROPY_SIZE) != KEY_ID_ENTROPY_SIZE) {
+        return -1;
     }
     
     // Hash entropy to create deterministic but unpredictable key ID
@@ -155,8 +156,8 @@ int charm_key_generate(const charm_key_generation_params_t* params, char* key_id
     
     // Use CHARM system for high-quality key material generation
     uint8_t entropy_seed[64];
-    for (size_t i = 0; i < sizeof(entropy_seed); i++) {
-        entropy_seed[i] = (uint8_t)(rand() ^ (time(NULL) + i * 7));
+    if (system_entropy_extract_fast(entropy_seed, sizeof(entropy_seed)) != sizeof(entropy_seed)) {
+        return -1;
     }
     
     // Additional entropy from parameters if provided
@@ -208,37 +209,39 @@ int charm_key_generate(const charm_key_generation_params_t* params, char* key_id
         return -1;
     }
     
-    // Save key material to file
+    // Save key material to file with restrictive permissions
     char key_file_path[256];
     get_key_file_path(key_id, key_file_path);
     
-    FILE* key_file = fopen(key_file_path, "wb");
-    if (!key_file) {
+    // Create key file with restrictive permissions (owner read/write only)
+    int key_fd = open(key_file_path, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
+    if (key_fd == -1) {
         return -errno;
     }
     
-    size_t written = fwrite(key_material, 1, key_size, key_file);
-    fclose(key_file);
+    ssize_t written = write(key_fd, key_material, key_size);
+    close(key_fd);
     
-    if (written != key_size) {
+    if (written != (ssize_t)key_size) {
         unlink(key_file_path); // Clean up partial file
         return -EIO;
     }
     
-    // Save metadata to file
+    // Save metadata to file with restrictive permissions
     char meta_file_path[256];
     get_metadata_file_path(key_id, meta_file_path);
     
-    FILE* meta_file = fopen(meta_file_path, "wb");
-    if (!meta_file) {
+    // Create metadata file with restrictive permissions (owner read/write only)
+    int meta_fd = open(meta_file_path, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
+    if (meta_fd == -1) {
         unlink(key_file_path); // Clean up key file
         return -errno;
     }
     
-    written = fwrite(&metadata, 1, sizeof(metadata), meta_file);
-    fclose(meta_file);
+    written = write(meta_fd, &metadata, sizeof(metadata));
+    close(meta_fd);
     
-    if (written != sizeof(metadata)) {
+    if (written != (ssize_t)sizeof(metadata)) {
         unlink(key_file_path);
         unlink(meta_file_path);
         return -EIO;
