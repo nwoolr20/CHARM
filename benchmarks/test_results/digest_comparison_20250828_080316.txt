@@ -1,0 +1,39 @@
+CHARM Comprehensive Benchmark Tool
+==================================
+
+Digest Comparison Test
+======================
+
+Input: "(empty)" (0 bytes)
+CHARM:   b8174081329324dd760eade0e5077dfcdcfc320be022a057345be2ca5e9a5037
+SHA-256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+BLAKE3:  af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262
+
+Input: "a" (1 bytes)
+CHARM:   c79b267a34ebc4c9c2f606de7bdae8a1eda231a8f0e8c546c9a4f0afa1bc637d
+SHA-256: ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb
+BLAKE3:  17762fddd969a453925d65717ac3eea21320b66b54342fde15128d6caf21215f
+
+Input: "abc" (3 bytes)
+CHARM:   7e9c25bbf2208b1d2038f2fb507150f5be2e9ccb8ab3eada6f6781606ab6904c
+SHA-256: ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+BLAKE3:  6437b3ac38465133ffb63b75273a8db548c558465d79db03fd359c6cd5bd9d85
+
+Input: "The quick brown fox jumps over the lazy dog" (43 bytes)
+CHARM:   85f35632341dcf57e052cb4bcf1be60c3f5982d13ae8149ed0a16724a2387e74
+SHA-256: d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592
+BLAKE3:  2f1514181aadccd913abd94cfa592701a5686ab23f8df1dff1b74710febc6d4a
+
+Input: "CHARM is a revolutionary entropy-native hashing system" (54 bytes)
+CHARM:   48534da8456e957bdef409431e71d020554caf92f6a7217c806de5d9a54ac47e
+SHA-256: 4089b0f24e58900f4e86bddd6ec8dd5f1716b711c6243e834fb69069b9aa42c8
+BLAKE3:  aab4c96a7572253b74b1e558f57873a3583f07b7e9d2e309e89269867fdf5a74
+
+Benchmark complete!
+
+CHARM Features:
+- Entropy-native design with quantum field collapse simulation
+- SIMD-accelerated chaos injection and entropy diffusion
+- Ternary logic gates and trampoline mappings
+- Temporal entropy mixing with avalanche effects
+- Designed to exceed conventional hash function performance

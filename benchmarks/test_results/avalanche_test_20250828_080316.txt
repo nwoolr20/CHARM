@@ -1,0 +1,3 @@
+Input A: 'test' -> 813c9a706bb61d8f26f1f79287e57ede62794933952e9a3a2e1930da35ed8125
+Input B: 'tesT' -> 097b65fe6275d252bf870d5f47b32ad550832fa9aff65e4e3f2b72c1abb7fa2c
+Differing bits: 128

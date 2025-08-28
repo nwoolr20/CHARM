@@ -8,66 +8,66 @@ Target: Ultra-small inputs (8B, 16B, 32B, 64B)
 === 8-byte Input Performance ===
 Algorithm    | Size | Time (ms) | Throughput   | Cycles/B | Performance
 -------------+------+-----------+--------------+----------+----------------
-CHARM-B      |   8B |    0.119 ms |        642.3 MB/s |     3.93 | BASELINE
-SHA-256      |   8B |    0.934 ms |         81.7 MB/s |    28.55 | ✅  686.2% FASTER vs SHA-256
-AES-256-GCM  |   8B |    9.481 ms |          8.0 MB/s |   289.81 | ✅ 7881.5% FASTER vs AES-GCM
+CHARM-B      |   8B |    0.074 ms |       1036.8 MB/s |     2.47 | BASELINE
+SHA-256      |   8B |    0.615 ms |        124.0 MB/s |    18.81 | ✅  736.3% FASTER vs SHA-256
+AES-256-GCM  |   8B |    9.361 ms |          8.1 MB/s |   286.16 | ✅ 12621.2% FASTER vs AES-GCM
 
 📊 Performance Summary for 8 bytes:
-   vs SHA-256:      +686.2%
-   vs AES-256-GCM: +7881.5%
-   Absolute:             642.3 MB/s
+   vs SHA-256:      +736.3%
+   vs AES-256-GCM: +12621.2%
+   Absolute:            1036.8 MB/s
 
 === 16-byte Input Performance ===
 Algorithm    | Size | Time (ms) | Throughput   | Cycles/B | Performance
 -------------+------+-----------+--------------+----------+----------------
-CHARM-B      |  16B |    0.100 ms |       1527.6 MB/s |     1.53 | BASELINE
-SHA-256      |  16B |    0.581 ms |        262.8 MB/s |     8.87 | ✅  481.2% FASTER vs SHA-256
-AES-256-GCM  |  16B |    9.436 ms |         16.2 MB/s |   144.21 | ✅ 9346.3% FASTER vs AES-GCM
+CHARM-B      |  16B |    0.105 ms |       1452.4 MB/s |     1.61 | BASELINE
+SHA-256      |  16B |    0.579 ms |        263.6 MB/s |     8.85 | ✅  450.9% FASTER vs SHA-256
+AES-256-GCM  |  16B |    9.326 ms |         16.4 MB/s |   142.53 | ✅ 8776.7% FASTER vs AES-GCM
 
 📊 Performance Summary for 16 bytes:
-   vs SHA-256:      +481.2%
-   vs AES-256-GCM: +9346.3%
-   Absolute:            1527.6 MB/s
+   vs SHA-256:      +450.9%
+   vs AES-256-GCM: +8776.7%
+   Absolute:            1452.4 MB/s
 
 === 32-byte Input Performance ===
 Algorithm    | Size | Time (ms) | Throughput   | Cycles/B | Performance
 -------------+------+-----------+--------------+----------+----------------
-CHARM-B      |  32B |    0.142 ms |       2148.9 MB/s |     1.09 | BASELINE
-SHA-256      |  32B |    0.540 ms |        564.7 MB/s |     4.13 | ✅  280.5% FASTER vs SHA-256
-AES-256-GCM  |  32B |    9.491 ms |         32.2 MB/s |    72.53 | ✅ 6582.9% FASTER vs AES-GCM
+CHARM-B      |  32B |    0.152 ms |       2002.0 MB/s |     1.17 | BASELINE
+SHA-256      |  32B |    0.541 ms |        563.8 MB/s |     4.14 | ✅  255.1% FASTER vs SHA-256
+AES-256-GCM  |  32B |    9.454 ms |         32.3 MB/s |    72.25 | ✅ 6101.8% FASTER vs AES-GCM
 
 📊 Performance Summary for 32 bytes:
-   vs SHA-256:      +280.5%
-   vs AES-256-GCM: +6582.9%
-   Absolute:            2148.9 MB/s
+   vs SHA-256:      +255.1%
+   vs AES-256-GCM: +6101.8%
+   Absolute:            2002.0 MB/s
 
 === 64-byte Input Performance ===
 Algorithm    | Size | Time (ms) | Throughput   | Cycles/B | Performance
 -------------+------+-----------+--------------+----------+----------------
-CHARM-B      |  64B |    0.197 ms |       3105.7 MB/s |     0.75 | BASELINE
-SHA-256      |  64B |    0.892 ms |        684.3 MB/s |     3.41 | ✅  353.8% FASTER vs SHA-256
-AES-256-GCM  |  64B |    9.554 ms |         63.9 MB/s |    36.50 | ✅ 4761.2% FASTER vs AES-GCM
+CHARM-B      |  64B |    0.242 ms |       2521.8 MB/s |     0.92 | BASELINE
+SHA-256      |  64B |    0.906 ms |        673.9 MB/s |     3.46 | ✅  274.2% FASTER vs SHA-256
+AES-256-GCM  |  64B |    9.483 ms |         64.4 MB/s |    36.23 | ✅ 3818.1% FASTER vs AES-GCM
 
 📊 Performance Summary for 64 bytes:
-   vs SHA-256:      +353.8%
-   vs AES-256-GCM: +4761.2%
-   Absolute:            3105.7 MB/s
+   vs SHA-256:      +274.2%
+   vs AES-256-GCM: +3818.1%
+   Absolute:            2521.8 MB/s
 
 ============================================================
 REAL-WORLD APPLICATION SCENARIOS
 ============================================================
 
 🔗 Blockchain Transaction ID (32 bytes):
-   CHARM-B Performance: 2148.4 MB/s
+   CHARM-B Performance: 1922.2 MB/s
 
 🔑 API Authentication Token (16 bytes):
-   CHARM-B Performance: 1528.5 MB/s
+   CHARM-B Performance: 1457.3 MB/s
 
 📡 IoT Sensor Reading (8 bytes):
-   CHARM-B Performance: 1130.9 MB/s
+   CHARM-B Performance: 1037.3 MB/s
 
 🗄️  Database Index Key (64 bytes):
-   CHARM-B Performance: 3114.1 MB/s
+   CHARM-B Performance: 2507.9 MB/s
 
 ============================================================
 BENCHMARK COMPLETE
