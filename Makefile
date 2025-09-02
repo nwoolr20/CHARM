@@ -136,9 +136,9 @@ full: $(LIB_STATIC) $(CHARM_BIN) $(BENCH_BIN)
 
 # Build security suite
 security_suite: $(SECURITY_SUITE_OBJECTS) $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o
-	@echo "Building CHARM Security Suite..."
+	@echo "Building CHARM Security Suite CLI..."
 	$(CC) $(CFLAGS) -o $(BUILD_DIR)/charm_security_suite \
-		$(SRC_DIR)/main.c \
+		$(SRC_DIR)/security_suite_cli.c \
 		$(SECURITY_SUITE_OBJECTS) \
 		$(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o \
 		$(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o \
