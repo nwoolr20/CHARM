@@ -1,3 +1,20 @@
+/*
+ * CHARM – High-Performance Entropy-Native Cryptographic Framework
+ * Copyright (c) 2025 Nicholas Woolridge & NOCTRL™ (Nô)
+ *
+ * This software is licensed under the CHARM License 2025.
+ * Use, modification, and distribution are permitted only with
+ * verified, real-world test results demonstrating correct
+ * functionality, performance, and security.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+ * See LICENSE in the repository root for full license details.
+ */
+
+
+// SPDX-License-Identifier: LicenseRef-CHARM-2025
+// SPDX-FileCopyrightText: Copyright (c) 2025 Nicholas Woolridge & NOCTRL™ (Nô)
+
 /**
  * @file charm_ref.c
  * @brief CHARM Reference Implementation - Frozen Algorithm Specification
