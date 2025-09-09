@@ -41,9 +41,6 @@ experimental/
 ├── aeas/                        # AEAS integration project
 │   ├── README.md
 │   └── charm_aeas.h            # AEAS-optimized interface
-├── fractal-down/               # Fractal Down integration
-│   ├── README.md
-│   └── fractal_charm.h         # Memory-bounded execution
 └── hybrid/                     # Hybrid optimization system
     ├── README.md
     └── charm_hybrid.h          # Intelligent algorithm selection
@@ -60,18 +57,6 @@ experimental/
 - 16-64 bytes: 100-200 MB/s (5-10x improvement)
 - 64-256 bytes: 200-400 MB/s (10-20x improvement)
 - 256-1024 bytes: 300-500 MB/s (15-25x improvement)
-
-### Fractal Down Integration Potential ✅ DOCUMENTED
-**Memory Optimization Features:**
-- √N memory scaling to replace malloc-heavy patterns
-- DAG-based execution planning for cryptographic operations
-- Anytime results with early termination capabilities
-- Priority scheduling for high-value computation paths
-
-**Benefits:**
-- Memory usage: O(√N) vs O(N) traditional
-- Predictable resource consumption for embedded systems
-- Graceful performance degradation under constraints
 
 ### Hybrid Optimization ✅ DOCUMENTED
 **Intelligent Selection Matrix:**
@@ -94,21 +79,14 @@ experimental/
 4. Integrate Poly1305 authentication option
 5. Benchmark against targets
 
-### Phase 2: Fractal Down Integration
-1. Implement DAG execution planner
-2. Create √N memory pool manager
-3. Add priority-based scheduler
-4. Integrate anytime result handling
-5. Validate memory efficiency
-
-### Phase 3: Hybrid Optimization
+### Phase 2: Hybrid Optimization
 1. Build decision engine for algorithm selection
 2. Implement SIMD auto-detection
 3. Create performance profiling system
 4. Add runtime adaptation mechanisms
 5. Comprehensive benchmarking
 
-### Phase 4: Validation & Documentation
+### Phase 3: Validation & Documentation
 1. Security analysis of all optimizations
 2. Performance comparison with industry standards
 3. Integration testing with existing CHARM ecosystem

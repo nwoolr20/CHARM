@@ -114,7 +114,6 @@ Each function of the CHARM Security Suite CLI has been tested with:
 **Status:** ✅ PASS
 **Command:** `./build/charm_security_suite --experimental`
 **Result:** 
-- Fractal-down algorithm: Available
 - Hybrid entropy sources: Active
 - AEAS integration: Experimental
 - Experimental test: PASS

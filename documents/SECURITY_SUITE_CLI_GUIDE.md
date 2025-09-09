@@ -54,7 +54,7 @@ The CLI provides comprehensive testing and monitoring for all CHARM implementati
 - `--charm-core` – test core CHARM functionality including digest computation.
 - `--charm-b` – test CHARM-B implementation with enhanced entropy processing.
 - `--charm-aead` – test CHARM AEAD functionality and cipher suites.
-- `--experimental` – test experimental variants including fractal-down algorithms and hybrid entropy sources.
+- `--experimental` – test experimental variants including hybrid entropy sources.
 
 ### Performance & Monitoring
 
@@ -129,7 +129,6 @@ The security suite CLI provides comprehensive coverage for:
 - Security test vector validation
 
 ### Experimental Variants
-- Fractal-down algorithm implementations
 - Hybrid entropy source integration
 - AEAS (Advanced Entropy Analysis System) experimental features
 - Research and development components

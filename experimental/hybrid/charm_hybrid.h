@@ -2,7 +2,7 @@
  * @file charm_hybrid.h
  * @brief CHARM Hybrid Optimization System
  * 
- * Advanced implementation combining CHARM, CHARM-B, AEAS, and Fractal Down
+ * Advanced implementation combining CHARM, CHARM-B, and AEAS
  * techniques with intelligent algorithm selection and SIMD optimizations.
  */
 
@@ -57,8 +57,7 @@ typedef enum {
     CHARM_STRATEGY_CHARM_B = 1,   // Force CHARM-B for small payloads
     CHARM_STRATEGY_CHARM = 2,     // Force regular CHARM
     CHARM_STRATEGY_AEAS = 3,      // Force AEAS optimizations
-    CHARM_STRATEGY_FRACTAL = 4,   // Force Fractal Down execution
-    CHARM_STRATEGY_CUSTOM = 5     // Custom algorithm selection
+    CHARM_STRATEGY_CUSTOM = 4     // Custom algorithm selection
 } charm_strategy_t;
 
 /**

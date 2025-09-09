@@ -7,8 +7,7 @@ This directory contains experimental integrations and optimizations for the CHAR
 The experimental directory implements cutting-edge optimizations inspired by:
 
 1. **AEAS Integration**: Advanced batched keystream generation and SIMD optimizations
-2. **Fractal Down Integration**: Memory-bounded execution with √N scaling and DAG-based optimization
-3. **Hybrid Algorithms**: Intelligent selection between CHARM variants for optimal performance
+2. **Hybrid Algorithms**: Intelligent selection between CHARM variants for optimal performance
 
 ## Projects
 
@@ -19,14 +18,7 @@ Advanced encryption with adaptive streaming, featuring:
 - Stack-based HMAC optimization with pre-allocated contexts
 - Poly1305 integration for RFC 7539 compatibility
 
-### 2. Fractal Down Integration (`fractal-down/`)
-Memory-bounded cryptographic execution:
-- √N memory scaling to replace malloc-heavy patterns
-- DAG-based execution planning for cryptographic operations
-- Anytime results with early termination capabilities
-- Priority scheduling for high-value computation paths
-
-### 3. Hybrid Optimization (`hybrid/`)
+### 2. Hybrid Optimization (`hybrid/`)
 Intelligent algorithm selection and optimization:
 - Dynamic algorithm switching based on payload characteristics
 - SIMD-optimized implementations (AVX2/AVX512)
@@ -69,7 +61,6 @@ See individual project directories for detailed build and usage instructions. Al
 
 - [x] Project structure created
 - [ ] AEAS integration implementation
-- [ ] Fractal Down integration implementation  
 - [ ] Hybrid optimization implementation
 - [ ] Comprehensive benchmarking suite
 - [ ] Documentation and results analysis

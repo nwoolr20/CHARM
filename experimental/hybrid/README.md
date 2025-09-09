@@ -2,7 +2,7 @@
 
 ## Overview
 
-This implementation combines the best aspects of CHARM, CHARM-B, AEAS, and Fractal Down techniques to create an intelligent hybrid system that dynamically selects optimal algorithms and optimizations based on payload characteristics and system resources.
+This implementation combines the best aspects of CHARM, CHARM-B, and AEAS techniques to create an intelligent hybrid system that dynamically selects optimal algorithms and optimizations based on payload characteristics and system resources.
 
 ## Intelligent Algorithm Selection
 
@@ -12,7 +12,7 @@ Payload Size    Memory Available    CPU Features    Algorithm Choice
 ≤32B           <1KB               SSE2            CHARM-B + SIMD
 32-128B        <4KB               AVX2            CHARM-B + AEAS
 128-1KB        <16KB              AVX512          CHARM + AEAS
-1-16KB         <64KB              Any             CHARM + Fractal
+1-16KB         <64KB              Any             CHARM + Streaming
 ≥16KB          Any                Any             CHARM + Streaming
 ```
 
@@ -63,8 +63,8 @@ Payload Size    Memory Available    CPU Features    Algorithm Choice
 
 ### Large Payloads (≥4KB)
 - **Target**: 400-800 MB/s encryption/decryption
-- **Optimization**: CHARM + Fractal Down + Streaming
-- **Memory**: √N scaling, progressive processing
+- **Optimization**: CHARM + Streaming
+- **Memory**: Progressive processing
 
 ## Architecture
 
@@ -84,7 +84,7 @@ Payload Size    Memory Available    CPU Features    Algorithm Choice
 ├─────────────────────────────────────────────────────────────┤
 │  Algorithm Layer                                            │
 │  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────────┐                  │
-│  │CHARM │ │CHARM-B│ │ AEAS │ │ Fractal  │                  │
+│  │CHARM │ │CHARM-B│ │ AEAS │ │ Streaming│                  │
 │  └──────┘ └──────┘ └──────┘ └──────────┘                  │
 └─────────────────────────────────────────────────────────────┘
 ```

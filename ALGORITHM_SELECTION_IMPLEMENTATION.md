@@ -64,30 +64,6 @@ while (i + 8 <= input_len) {
 }
 ```
 
-## Fractal Down Integration Potential
-
-Based on analysis of the Fractal Down project, several integration opportunities exist:
-
-### Memory Optimization
-- **√N Memory Scaling**: Replace malloc-heavy patterns with bounded scratch memory
-- **Anytime Results**: Allow early termination with partial results for large payloads
-- **Deterministic Replay**: Cache execution plans for repeated operations
-
-### Compiler Optimizations  
-- **DAG-based Execution**: Model cryptographic operations as dependency graphs
-- **Priority Scheduling**: High-value paths first (e.g., authentication before encryption)
-- **Adaptive Processing**: Dynamic algorithm selection based on system resources
-
-### Potential Applications
-```python
-# Conceptual integration
-fractal_plan = FractalDown.plan(
-    graph=charm_aead_operations,
-    memory_bound=sqrt(payload_size),
-    priority=["authentication", "keystream", "encryption"]
-)
-result = fractal_plan.execute(bounded_memory=True)
-```
 
 ## Current Status
 
@@ -96,12 +72,12 @@ result = fractal_plan.execute(bounded_memory=True)
 - [x] Maintained authentication compatibility across all sizes
 - [x] All tests passing with improved performance
 - [x] Explored AEAS implementation for optimization insights
-- [x] Analyzed Fractal Down integration possibilities
+- [x] Explored optimization possibilities for future enhancements
 
 ### 🔄 Future Enhancements
 - [ ] Integrate AEAS-style batched keystream generation
 - [ ] Implement 64-bit XOR operations for better performance
-- [ ] Consider Fractal Down for memory-bounded cryptographic operations
+- [ ] Implement memory-bounded cryptographic operations
 - [ ] Add CHARM-B integration for very small payloads (when compatibility allows)
 
 ## Security Considerations
@@ -115,4 +91,4 @@ The algorithm selection maintains all CHARM security properties:
 
 ## Conclusion
 
-The adaptive algorithm selection successfully implements the user's requirements while maintaining excellent performance and security properties. The implementation provides a solid foundation for future optimizations inspired by AEAS and potential Fractal Down integration.
+The adaptive algorithm selection successfully implements the user's requirements while maintaining excellent performance and security properties. The implementation provides a solid foundation for future optimizations inspired by AEAS.

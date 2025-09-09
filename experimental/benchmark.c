@@ -2,7 +2,7 @@
  * @file experimental_benchmark.c
  * @brief Comprehensive benchmarking suite for CHARM experimental optimizations
  * 
- * Tests and compares performance of AEAS, Fractal Down, and Hybrid implementations
+ * Tests and compares performance of AEAS and Hybrid implementations
  * against baseline CHARM and industry standards.
  */
 
@@ -15,7 +15,6 @@
 
 // Include experimental headers (when implemented)
 // #include "aeas/charm_aeas.h"
-// #include "fractal-down/fractal_charm.h"  
 // #include "hybrid/charm_hybrid.h"
 
 // For now, include base CHARM headers
@@ -258,7 +257,6 @@ static void analyze_performance(const benchmark_result_t* results, size_t count)
     
     printf("Optimization Opportunities:\n");
     printf("• AEAS integration could improve small payload performance by 5-10x\n");
-    printf("• Fractal Down could reduce memory usage by 50-80%% for large payloads\n");
     printf("• Hybrid optimization could achieve best-case performance across all sizes\n");
     printf("• SIMD optimizations could provide 2-4x improvement with vectorization\n");
     printf("\n");
@@ -281,7 +279,7 @@ int main(void) {
     printf("=================================================\n");
     printf("\n");
     printf("Testing baseline CHARM performance to establish optimization targets.\n");
-    printf("Future implementations will include AEAS, Fractal Down, and Hybrid optimizations.\n");
+    printf("Future implementations will include AEAS and Hybrid optimizations.\n");
     printf("\n");
     
     // Test configurations
@@ -337,10 +335,9 @@ int main(void) {
     
     printf("\nNext Steps:\n");
     printf("1. Implement AEAS optimizations in experimental/aeas/\n");
-    printf("2. Implement Fractal Down integration in experimental/fractal-down/\n");
-    printf("3. Implement Hybrid optimization in experimental/hybrid/\n");
-    printf("4. Re-run benchmarks to validate optimization targets\n");
-    printf("5. Ensure all optimizations maintain CHARM's security properties\n");
+    printf("2. Implement Hybrid optimization in experimental/hybrid/\n");
+    printf("3. Re-run benchmarks to validate optimization targets\n");
+    printf("4. Ensure all optimizations maintain CHARM's security properties\n");
     
     free(results);
     return 0;

@@ -486,7 +486,6 @@ int main(int argc, char* argv[]) {
 
     if (test_experimental) {
         printf("Testing experimental variants...\n");
-        printf("  Fractal-down algorithm: Available\n");
         printf("  Hybrid entropy sources: Active\n");
         printf("  AEAS integration: Experimental\n");
         printf("  Experimental test: PASS\n");

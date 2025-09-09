@@ -49,5 +49,4 @@ help:
 	@echo ""
 	@echo "Experimental Projects:"
 	@echo "  aeas/      - AEAS integration optimizations"
-	@echo "  fractal-down/ - Fractal Down memory-bounded execution"
 	@echo "  hybrid/    - Hybrid optimization system"
