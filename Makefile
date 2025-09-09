@@ -168,14 +168,13 @@ test: core bench
 	@cd $(BUILD_DIR) && ./benchmark_comprehensive || true
 
 # Test security suite - minimal build
-test_security_suite_minimal: $(SECURITY_SUITE_OBJECTS) $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o $(BUILD_DIR)/charm_minimal_api.o
+test_security_suite_minimal: $(SECURITY_SUITE_OBJECTS) $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o
 	@echo "Building minimal security suite test..."
 	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/test_security_suite \
 		$(SRC_DIR)/tests/test_security_suite.c \
 		$(SECURITY_SUITE_OBJECTS) \
 		$(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o \
 		$(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o \
-		$(BUILD_DIR)/charm_minimal_api.o \
 		$(LDFLAGS)
 	@echo "Running security suite test..."
 	@mkdir -p logs keystore config

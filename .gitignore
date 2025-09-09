@@ -17,16 +17,27 @@ bench_digest
 
 # Log files
 *.log
+logs/
 
 # Core dumps (in root and build directories)
 /core
 /build/core
 core.*
 
-# Test outputs
+# Test outputs and data files
 test_output/
+tests/outputs/
+benchmarks/test_results/
 test_results/results_*
 test_results/*_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9]*
+
+# Test data files that shouldn't be committed
+test*.txt
+test*.json
+test*.csv
+test*.xml
+*_test_output.*
+demo_*.json
 
 # IDE files
 .vscode/

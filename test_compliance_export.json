@@ -1,9 +1,0 @@
-{
-  "compliance_report": {
-    "timestamp": "1756814816",
-    "suite_version": "1.0.0",
-    "security_level": 70,
-    "incidents_count": 0,
-    "include_sensitive": false
-  }
-}
