@@ -11,6 +11,10 @@
  * See LICENSE in the repository root for full license details.
  */
 
+
+// SPDX-License-Identifier: LicenseRef-CHARM-2025
+// SPDX-FileCopyrightText: Copyright (c) 2025 Nicholas Woolridge & NOCTRL™ (Nô)
+
 /**
  * @file caeds_flux.c
  * @brief Implementation of the CAEDS entropy flux acquisition system

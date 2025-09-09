@@ -12,6 +12,10 @@
  */
 
 
+
+// SPDX-License-Identifier: LicenseRef-CHARM-2025
+// SPDX-FileCopyrightText: Copyright (c) 2025 Nicholas Woolridge & NOCTRL™ (Nô)
+
 /**
  * @file charm.h
  * @brief Main header file for the CHARM system
