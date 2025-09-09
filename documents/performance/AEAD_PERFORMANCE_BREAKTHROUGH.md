@@ -1,4 +1,4 @@
-# CHARM AEAD Performance Breakthrough Report
+# CHARM AEAD Performance Report
 
 ## Executive Summary
 
@@ -59,7 +59,7 @@
 ✅ **Larger Authentication Tags**: 256-bit vs 128-bit (AES-GCM)
 ✅ **Constant-Time Implementation**: Timing attack resistant
 
-## Performance Breakthrough Highlights
+## Performance Highlights
 
 ### CHARM-B AEAD Performance Gains:
 - **16B**: 3.2 → 121 MB/s (**37x improvement**)
@@ -135,7 +135,7 @@ for (; i + 32 <= len; i += 32) {
 
 ## Conclusion
 
-The CHARM AEAD implementation has achieved a **major performance breakthrough**, transforming from a research prototype to a **production-ready cryptographic solution**. CHARM-B AEAD now delivers:
+The CHARM AEAD implementation has achieved significant performance improvements, transforming from a research prototype to a production-ready cryptographic solution. CHARM-B AEAD now delivers:
 
 1. **🎯 Target Achievement**: 27-81% of AES-128-GCM performance across all payload sizes
 2. **🚀 Massive Improvements**: 18-37x performance gains through optimization

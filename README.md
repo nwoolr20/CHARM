@@ -240,38 +240,130 @@ Together, these modules make CHARM a self-regulating, high-performance hashing f
 
 ## Installation and Setup
 
-### Prerequisites
+### System Requirements
 
-- C99-compatible compiler
-- POSIX-compliant operating system
-- AVX2 or NEON support for full performance (optional)
-- 64-bit architecture recommended
+#### Hardware Requirements
+- **CPU**: x86_64 or ARM64 architecture
+- **Memory**: Minimum 2GB RAM for building, 64MB for runtime
+- **Storage**: 1GB free space for complete build with tests
+- **SIMD Support**: AVX2 (Intel/AMD) or NEON (ARM) for optimal performance
 
-### Building CHARM
+#### Software Requirements
+- **Compiler**: GCC 4.8+ or Clang 3.4+ with C99 support
+- **Operating System**: Linux, macOS, or UNIX-compatible system
+- **Build Tools**: Make, standard POSIX utilities
+- **Libraries**: OpenSSL development headers (for benchmarking)
 
+### Installation Methods
+
+#### Quick Installation
 ```bash
-# Clone the repository
+# Clone and build
+git clone https://github.com/nwoolr20/CHARM.git
+cd CHARM
+make all
+
+# Install system-wide (requires sudo)
+sudo make install
+
+# Or install to custom prefix
+make install PREFIX=/usr/local/charm
+```
+
+#### Development Build
+```bash
+# Full development environment
 git clone https://github.com/nwoolr20/CHARM.git
 cd CHARM
 
-# Build the core system
+# Build core CHARM framework
 make core
 
-# Build the complete security suite  
+# Build complete security suite  
 make security_suite
 
-# Build benchmarks
-make bench
+# Build all components and tests
+make all
 
-# Run core tests
-make test
-
-# Run security suite test
-make test_security_suite_minimal
-
-# Run performance benchmarks
-make benchmark
+# Run comprehensive test suite
+make test_all
 ```
+
+#### Verification and Testing
+```bash
+# Verify installation
+./build/charm --help
+
+# Quick functionality test
+echo "test" | ./build/charm
+
+# Complete system verification
+./Launch_CHARM --test
+
+# Performance benchmark
+make benchmark
+
+# Security suite validation
+make test_security_suite_minimal
+```
+
+### Configuration
+
+#### Environment Variables
+- **`CHARM_LOG_LEVEL`**: Set logging verbosity (ERROR, WARN, INFO, DEBUG)
+- **`CHARM_ENTROPY_SOURCE`**: Override default entropy source
+- **`CHARM_SIMD_DISABLE`**: Disable SIMD optimizations (for debugging)
+
+#### Configuration Files
+- **System Config**: `/etc/charm/charm.conf` (global settings)
+- **User Config**: `~/.config/charm/config` (user preferences)  
+- **Runtime Config**: Current directory `.charm_config` (project-specific)
+
+### Platform-Specific Notes
+
+#### Linux (Ubuntu/Debian)
+```bash
+# Install build dependencies
+sudo apt-get update
+sudo apt-get install build-essential libssl-dev
+
+# Build and install
+make all && sudo make install
+```
+
+#### Linux (CentOS/RHEL)
+```bash
+# Install build dependencies  
+sudo yum groupinstall "Development Tools"
+sudo yum install openssl-devel
+
+# Build and install
+make all && sudo make install
+```
+
+#### macOS
+```bash
+# Install Xcode command line tools
+xcode-select --install
+
+# Build (uses system OpenSSL or Homebrew)
+make all
+
+# Install to /usr/local
+sudo make install
+```
+
+### Troubleshooting
+
+#### Build Issues
+- **Missing OpenSSL**: Install development headers or set `OPENSSL_DIR`
+- **Compiler Errors**: Ensure C99 support and update compiler if needed
+- **Permission Issues**: Use `PREFIX` for non-root installation
+
+#### Runtime Issues  
+- **SIMD Errors**: Disable with `export CHARM_SIMD_DISABLE=1`
+- **Entropy Warnings**: Check `/dev/urandom` availability
+- **Performance Issues**: Verify AVX2/NEON support with `./build/charm --cpu-info`
 
 ## Security Suite Usage
 
