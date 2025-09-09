@@ -426,15 +426,15 @@ Detailed documentation is available in the `documents` directory:
 
 ### CHARM Framework Components
 
-- **[Foundational CHARM (src/)](src/)**: Core entropy-native cryptographic framework with ECE, CAEDS, and CEE implementations
-- **[CHARM Algorithm (algorithm/)](algorithm/)**: Reference and library implementations of the CHARM hash algorithm with frozen specification
-- **[CHARM AEAD (algorithm/aead/)](algorithm/aead/)**: Enterprise-grade authenticated encryption with misuse-resistant SIV variant using CHARM-512
-- **[CHARM-B (CHARM-B/)](CHARM-B/)**: Ultra-small input optimized hash with comprehensive performance analysis
-- **[CHARM-B AEAD (CHARM-B/AEAD/)](CHARM-B/AEAD/)**: Ultra-fast AEAD for constrained environments with SIV support
-- **[AEAD/AEAS (AEAD/AEAS/)](AEAD/AEAS/)**: Authenticated encryption experiments with performance studies  
-- **[PBKDF2 Implementation (PBKDF2/)](PBKDF2/)**: RFC 2898 compliant password-based key derivation with CHARM integration
-- **[Security Suite (src/crypto/)](src/crypto/)**: Enterprise-grade security platform with comprehensive security services
-- **[Conformance Testing (documents/)](documents/)**: NIST-style validation framework
+- **[Foundational CHARM (src/)](src/README.md)**: Core entropy-native cryptographic framework with ECE, CAEDS, and CEE implementations
+- **[CHARM Algorithm (algorithm/)](algorithm/README.md)**: Reference and library implementations of the CHARM hash algorithm with frozen specification
+- **[CHARM AEAD (algorithm/aead/)](algorithm/aead/README.md)**: Enterprise-grade authenticated encryption with misuse-resistant SIV variant using CHARM-512
+- **[CHARM-B (CHARM-B/)](CHARM-B/README.md)**: Ultra-small input optimized hash with comprehensive performance analysis
+- **[CHARM-B AEAD (CHARM-B/AEAD/)](CHARM-B/AEAD/README.md)**: Ultra-fast AEAD for constrained environments with SIV support
+- **[AEAD/AEAS (AEAD/AEAS/)](AEAD/AEAS/README.md)**: Authenticated encryption experiments with performance studies  
+- **[PBKDF2 Implementation (PBKDF2/)](PBKDF2/README.md)**: RFC 2898 compliant password-based key derivation with CHARM integration
+- **[Security Suite (src/crypto/)](src/crypto/README.md)**: Enterprise-grade security platform with comprehensive security services
+- **[Conformance Testing (documents/)](documents/README.md)**: NIST-style validation framework
 
 ## Contributing
 
