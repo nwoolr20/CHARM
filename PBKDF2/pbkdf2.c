@@ -2,7 +2,7 @@
  * @file pbkdf2.c
  * @brief PBKDF2 (Password-Based Key Derivation Function 2) Implementation for CHARM
  *
- * RFC 2898 compliant implementation with HMAC-SHA256 and CHARM integration.
+ * RFC 2898 compliant implementation with HMAC-CHARM-256 and CHARM integration.
  */
 
 #include "pbkdf2.h"
@@ -10,10 +10,157 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <openssl/hmac.h>
-#include <openssl/sha.h>
+#include "../include/ece_core.h"
 #include <openssl/rand.h>
-#include <openssl/evp.h>
+
+/* HMAC-CHARM-256 constants */
+#define HMAC_CHARM_BLOCK_SIZE  64  // CHARM block size  
+#define HMAC_CHARM_OUTPUT_SIZE 32  // CHARM-256 output size
+#define IPAD 0x36
+#define OPAD 0x5C
+
+/* CHARM-256 one-shot hash using ECE as CHARM */
+static int charm_256_hash(const uint8_t* data, size_t data_len, uint8_t* out) {
+    ece_config_t config = {
+        .collapse_rounds = 32,      // Use 32 rounds for CHARM-256
+        .use_ternary_logic = true,
+        .use_trampoline = true,
+        .use_avalanche = true,
+        .entropy_quality = 0.95
+    };
+    
+    ece_handle_t handle = ece_init(&config);
+    if (!handle) return -1;
+    
+    if (ece_process_block(handle, data, data_len) != ECE_STATUS_OK) {
+        ece_shutdown(handle);
+        return -1;
+    }
+    
+    if (ece_finalize(handle, out, HMAC_CHARM_OUTPUT_SIZE) != ECE_STATUS_OK) {
+        ece_shutdown(handle);
+        return -1;
+    }
+    
+    ece_shutdown(handle);
+    return 0;
+}
+
+/* Local HMAC-CHARM-256 implementation using ECE as CHARM */
+static int hmac_charm_256_local(const uint8_t* key, size_t key_len,
+                               const uint8_t* data, size_t data_len,
+                               uint8_t* out) {
+    if (!key || !out || (!data && data_len > 0)) {
+        return -1;
+    }
+    
+    uint8_t key_pad[HMAC_CHARM_BLOCK_SIZE];
+    uint8_t inner_hash[HMAC_CHARM_OUTPUT_SIZE];
+    
+    // Prepare key: if longer than block size, hash it first
+    if (key_len > HMAC_CHARM_BLOCK_SIZE) {
+        if (charm_256_hash(key, key_len, key_pad) != 0) {
+            return -1;
+        }
+        // Zero-pad the rest
+        memset(key_pad + HMAC_CHARM_OUTPUT_SIZE, 0, 
+               HMAC_CHARM_BLOCK_SIZE - HMAC_CHARM_OUTPUT_SIZE);
+    } else {
+        // Copy key and zero-pad
+        memcpy(key_pad, key, key_len);
+        memset(key_pad + key_len, 0, HMAC_CHARM_BLOCK_SIZE - key_len);
+    }
+    
+    // Inner hash: CHARM(key XOR ipad || data)
+    {
+        ece_config_t config = {
+            .collapse_rounds = 32,
+            .use_ternary_logic = true,
+            .use_trampoline = true,
+            .use_avalanche = true,
+            .entropy_quality = 0.95
+        };
+        
+        ece_handle_t handle = ece_init(&config);
+        if (!handle) return -1;
+        
+        // XOR key with ipad and update
+        uint8_t ipad_key[HMAC_CHARM_BLOCK_SIZE];
+        for (int i = 0; i < HMAC_CHARM_BLOCK_SIZE; i++) {
+            ipad_key[i] = key_pad[i] ^ IPAD;
+        }
+        
+        if (ece_process_block(handle, ipad_key, HMAC_CHARM_BLOCK_SIZE) != ECE_STATUS_OK) {
+            ece_shutdown(handle);
+            return -1;
+        }
+        
+        // Update with data
+        if (data_len > 0) {
+            if (ece_process_block(handle, data, data_len) != ECE_STATUS_OK) {
+                ece_shutdown(handle);
+                return -1;
+            }
+        }
+        
+        // Finalize inner hash
+        if (ece_finalize(handle, inner_hash, HMAC_CHARM_OUTPUT_SIZE) != ECE_STATUS_OK) {
+            ece_shutdown(handle);
+            return -1;
+        }
+        
+        ece_shutdown(handle);
+        // Clear sensitive data
+        memset(ipad_key, 0, sizeof(ipad_key));
+    }
+    
+    // Outer hash: CHARM(key XOR opad || inner_hash)
+    {
+        ece_config_t config = {
+            .collapse_rounds = 32,
+            .use_ternary_logic = true,
+            .use_trampoline = true,
+            .use_avalanche = true,
+            .entropy_quality = 0.95
+        };
+        
+        ece_handle_t handle = ece_init(&config);
+        if (!handle) return -1;
+        
+        // XOR key with opad and update
+        uint8_t opad_key[HMAC_CHARM_BLOCK_SIZE];
+        for (int i = 0; i < HMAC_CHARM_BLOCK_SIZE; i++) {
+            opad_key[i] = key_pad[i] ^ OPAD;
+        }
+        
+        if (ece_process_block(handle, opad_key, HMAC_CHARM_BLOCK_SIZE) != ECE_STATUS_OK) {
+            ece_shutdown(handle);
+            return -1;
+        }
+        
+        // Update with inner hash
+        if (ece_process_block(handle, inner_hash, HMAC_CHARM_OUTPUT_SIZE) != ECE_STATUS_OK) {
+            ece_shutdown(handle);
+            return -1;
+        }
+        
+        // Finalize outer hash
+        if (ece_finalize(handle, out, HMAC_CHARM_OUTPUT_SIZE) != ECE_STATUS_OK) {
+            ece_shutdown(handle);
+            return -1;
+        }
+        
+        ece_shutdown(handle);
+        // Clear sensitive data
+        memset(opad_key, 0, sizeof(opad_key));
+    }
+    
+    // Clear sensitive intermediate data
+    memset(key_pad, 0, sizeof(key_pad));
+    memset(inner_hash, 0, sizeof(inner_hash));
+    
+    return 0;
+}
 
 /* Secure memory functions */
 static void secure_memzero(void* ptr, size_t len) {
@@ -111,7 +258,7 @@ pbkdf2_result_t pbkdf2_generate_salt(uint8_t* salt, size_t salt_length, uint8_t 
     return PBKDF2_SUCCESS;
 }
 
-/* Core PBKDF2 implementation using HMAC-SHA256 */
+/* Core PBKDF2 implementation using HMAC-CHARM-256 */
 pbkdf2_result_t pbkdf2_derive_key(
     const uint8_t* password, size_t password_length,
     const uint8_t* salt, size_t salt_length,
@@ -124,7 +271,7 @@ pbkdf2_result_t pbkdf2_derive_key(
         return PBKDF2_ERROR_INVALID_PARAMS;
     }
 
-    const size_t hash_length = SHA256_DIGEST_LENGTH;
+    const size_t hash_length = HMAC_CHARM_OUTPUT_SIZE;
     const size_t blocks_needed = (key_length + hash_length - 1) / hash_length;
     
     uint8_t* temp_key = malloc(blocks_needed * hash_length);
@@ -134,8 +281,8 @@ pbkdf2_result_t pbkdf2_derive_key(
 
     /* PBKDF2 algorithm implementation */
     for (size_t block = 0; block < blocks_needed; block++) {
-        uint8_t u[SHA256_DIGEST_LENGTH];
-        uint8_t t[SHA256_DIGEST_LENGTH];
+        uint8_t u[HMAC_CHARM_OUTPUT_SIZE];
+        uint8_t t[HMAC_CHARM_OUTPUT_SIZE];
         
         /* Create salt + block number */
         size_t salt_block_len = salt_length + 4;
@@ -153,9 +300,8 @@ pbkdf2_result_t pbkdf2_derive_key(
         salt_block[salt_length + 3] = block_num & 0xFF;
 
         /* First iteration: U_1 = HMAC(password, salt || i) */
-        unsigned int hmac_len = 0;
-        if (!HMAC(EVP_sha256(), password, password_length, 
-                  salt_block, salt_block_len, u, &hmac_len)) {
+        if (hmac_charm_256_local(password, password_length, 
+                                salt_block, salt_block_len, u) != 0) {
             free(salt_block);
             free(temp_key);
             return PBKDF2_ERROR_CRYPTO;
@@ -165,8 +311,8 @@ pbkdf2_result_t pbkdf2_derive_key(
 
         /* Remaining iterations: U_n = HMAC(password, U_{n-1}) */
         for (uint32_t iter = 1; iter < iterations; iter++) {
-            if (!HMAC(EVP_sha256(), password, password_length, 
-                      u, hash_length, u, &hmac_len)) {
+            if (hmac_charm_256_local(password, password_length, 
+                                    u, hash_length, u) != 0) {
                 free(salt_block);
                 free(temp_key);
                 return PBKDF2_ERROR_CRYPTO;

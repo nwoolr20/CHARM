@@ -4,12 +4,12 @@ This directory contains a secure, RFC 2898 compliant implementation of PBKDF2 (P
 
 ## Overview
 
-PBKDF2 is a key derivation function that applies a pseudorandom function (HMAC-SHA256 in this implementation) to derive cryptographic keys from passwords. It uses a salt and iteration count to make dictionary attacks computationally expensive.
+PBKDF2 is a key derivation function that applies a pseudorandom function (HMAC-CHARM-256 in this implementation) to derive cryptographic keys from passwords. It uses a salt and iteration count to make dictionary attacks computationally expensive.
 
 ## Features
 
 - **RFC 2898 Compliant**: Full implementation of the PBKDF2 standard
-- **HMAC-SHA256 PRF**: Uses HMAC-SHA256 as the pseudorandom function
+- **HMAC-CHARM-256 PRF**: Uses HMAC-CHARM-256 as the pseudorandom function
 - **Secure Defaults**: 100,000 iterations, 32-byte salt by default
 - **CHARM Integration**: Optional integration with CHARM entropy subsystem
 - **Memory Safety**: Secure memory cleanup and constant-time comparison
@@ -21,7 +21,7 @@ PBKDF2 is a key derivation function that applies a pseudorandom function (HMAC-S
 - **Iterations**: 100,000 (provides strong protection against GPU attacks)
 - **Salt Length**: 32 bytes (256-bit salt)
 - **Key Length**: 32 bytes (256-bit key)
-- **PRF**: HMAC-SHA256
+- **PRF**: HMAC-CHARM-256
 
 ### Minimum Requirements
 - **Iterations**: 10,000 (absolute minimum for security)
@@ -177,7 +177,7 @@ This implementation follows:
 
 ## Dependencies
 
-- OpenSSL library (for HMAC-SHA256 implementation)
+- CHARM Security Suite (for HMAC-CHARM-256 implementation)
 - Standard C library
 - POSIX-compliant system (for secure random number generation)
 

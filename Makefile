@@ -29,7 +29,7 @@ BENCHMARKS_DIR = benchmarks
 PBKDF2_DIR = PBKDF2
 
 # Include path
-INCLUDES = -I$(INCLUDE_DIR) -Ithird_party/crypto/blake3/c -I$(PBKDF2_DIR)
+INCLUDES = -I$(INCLUDE_DIR) -Ithird_party/crypto/blake3/c -I$(PBKDF2_DIR) -Isrc/crypto/mac -IAEAD/AEAS/include -Ialgorithm/include
 
 # Core essential source files for minimal working system (updated paths)
 CORE_SOURCES = $(UTILS_DIR)/avx2_detect.c $(CORE_DIR)/ece_core.c $(CORE_DIR)/ece_digest.c $(CORE_DIR)/entropy_bus.c $(CORE_DIR)/system_entropy.c $(SRC_DIR)/main_simple.c
