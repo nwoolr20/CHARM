@@ -26,9 +26,10 @@ INCLUDE_DIR = include
 BUILD_DIR = build
 TOOLS_DIR = tools
 BENCHMARKS_DIR = benchmarks
+PBKDF2_DIR = PBKDF2
 
 # Include path
-INCLUDES = -I$(INCLUDE_DIR) -Ithird_party/crypto/blake3/c
+INCLUDES = -I$(INCLUDE_DIR) -Ithird_party/crypto/blake3/c -I$(PBKDF2_DIR)
 
 # Core essential source files for minimal working system (updated paths)
 CORE_SOURCES = $(UTILS_DIR)/avx2_detect.c $(CORE_DIR)/ece_core.c $(CORE_DIR)/ece_digest.c $(CORE_DIR)/entropy_bus.c $(CORE_DIR)/system_entropy.c $(SRC_DIR)/main_simple.c
@@ -40,6 +41,9 @@ SECURITY_SUITE_SOURCES = $(SRC_DIR)/crypto/keymanagement/key_manager.c \
                         $(SRC_DIR)/crypto/config/config.c \
                         $(SRC_DIR)/crypto/charm_security_suite.c
 
+# PBKDF2 source files
+PBKDF2_SOURCES = $(PBKDF2_DIR)/pbkdf2.c
+
 # All library source files (for full build)
 ALL_LIB_SOURCES = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(CORE_DIR)/*.c) $(wildcard $(UTILS_DIR)/*.c) $(SECURITY_SUITE_SOURCES)
 
@@ -48,6 +52,9 @@ CORE_OBJECTS = $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/e
 
 # Security suite object files
 SECURITY_SUITE_OBJECTS = $(BUILD_DIR)/key_manager.o $(BUILD_DIR)/audit.o $(BUILD_DIR)/auth.o $(BUILD_DIR)/config.o $(BUILD_DIR)/charm_security_suite.o
+
+# PBKDF2 object files
+PBKDF2_OBJECTS = $(BUILD_DIR)/pbkdf2.o
 
 ALL_LIB_OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c)) \
                   $(patsubst $(CORE_DIR)/%.c,$(BUILD_DIR)/%.o,$(wildcard $(CORE_DIR)/*.c)) \
@@ -111,6 +118,10 @@ $(BUILD_DIR)/charm_minimal_api.o: $(SRC_DIR)/charm_minimal_api.c | $(BUILD_DIR)
 	@echo "Compiling $< with performance optimizations..."
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
 
+$(BUILD_DIR)/pbkdf2.o: $(PBKDF2_DIR)/pbkdf2.c | $(BUILD_DIR)
+	@echo "Compiling PBKDF2 implementation..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
+
 # Build core functionality only
 core: $(CORE_OBJECTS)
 	@echo "Building CHARM core binary with maximum performance..."
@@ -135,11 +146,11 @@ small: $(BUILD_DIR)/benchmark_small_inputs.o $(BUILD_DIR)/avx2_detect.o $(BUILD_
 full: $(LIB_STATIC) $(CHARM_BIN) $(BENCH_BIN)
 
 # Build security suite
-security_suite: $(SECURITY_SUITE_OBJECTS) $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o
+security_suite: $(SECURITY_SUITE_OBJECTS) $(PBKDF2_OBJECTS) $(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o $(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o
 	@echo "Building CHARM Security Suite CLI..."
-	$(CC) $(CFLAGS) -o $(BUILD_DIR)/charm_security_suite \
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD_DIR)/charm_security_suite \
 		$(SRC_DIR)/security_suite_cli.c \
-		$(SECURITY_SUITE_OBJECTS) \
+		$(SECURITY_SUITE_OBJECTS) $(PBKDF2_OBJECTS) \
 		$(BUILD_DIR)/avx2_detect.o $(BUILD_DIR)/ece_core.o $(BUILD_DIR)/ece_digest.o \
 		$(BUILD_DIR)/entropy_bus.o $(BUILD_DIR)/system_entropy.o \
 		$(LDFLAGS)

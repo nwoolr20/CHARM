@@ -8,6 +8,7 @@ CHARM has evolved from a specialized entropy-native hashing framework into a **c
 
 ### ✅ Implemented Capabilities
 - **🔐 Cryptographic Services**: Entropy-native hashing, key generation, AEAD encryption
+- **🔑 PBKDF2 Key Derivation**: RFC 2898 compliant password-based key derivation with HMAC-SHA256
 - **👤 Identity & Access**: Authentication adapters, RBAC authorization, session management  
 - **📊 Audit Logging**: Tamper-evident logs with hash chains for integrity protection
 - **⚙️ Configuration Security**: Secure config management with validation and access control
@@ -18,6 +19,16 @@ CHARM has evolved from a specialized entropy-native hashing framework into a **c
 - **🔒 Secure Execution**: Sandboxing, memory safety, supply chain validation
 
 ## 🚀 Quick Start
+
+### Easy Access with Launch_CHARM
+
+```bash
+# Easy launcher for CHARM Security Suite
+./Launch_CHARM --help        # Show launcher help
+./Launch_CHARM --demo        # Run comprehensive demo
+./Launch_CHARM --test-pbkdf2 # Test PBKDF2 functionality
+./Launch_CHARM --status      # Quick status check
+```
 
 ### Build and Test the Security Suite
 
@@ -63,6 +74,19 @@ char issues[10][256];
 size_t issue_count;
 int health_score = charm_security_suite_health_check(issues, 10, &issue_count);
 printf("Security Health: %d/100\n", health_score);
+
+// PBKDF2 key derivation
+#include "PBKDF2/pbkdf2.h"
+
+pbkdf2_config_t pbkdf2_config;
+pbkdf2_context_t pbkdf2_ctx;
+pbkdf2_init_default_config(&pbkdf2_config);
+pbkdf2_init(&pbkdf2_config, &pbkdf2_ctx);
+
+const char* password = "user_password";
+pbkdf2_derive_with_context(&pbkdf2_ctx, (uint8_t*)password, strlen(password));
+// Use pbkdf2_ctx.derived_key for encryption keys
+pbkdf2_cleanup(&pbkdf2_ctx);
 ```
 
 ## 🎯 Security Suite Applications
@@ -91,6 +115,7 @@ CHARM Security Suite is built on a layered architecture that integrates multiple
 ### Core Security Layer
 - **🔐 Cryptographic Engine**: Entropy-native CHARM algorithms (CAEDS/CEE/ECE)
 - **🔑 Key Management**: Secure key generation, storage, rotation, and lifecycle management
+- **🔒 PBKDF2 Implementation**: RFC 2898 compliant password-based key derivation with HMAC-SHA256
 - **👤 Identity & Access**: Authentication adapters and RBAC authorization engine
 - **📊 Audit System**: Tamper-evident logging with hash chain integrity protection
 
@@ -112,7 +137,10 @@ The underlying CHARM algorithm provides the entropy-native foundation: CHARM/1.0
 ### 2. **Identity & Access Management**  
    Multi-method authentication (password, token, JWT) with role-based authorization and session management.
 
-### 3. **Audit & Compliance System**
+### 3. **PBKDF2 Key Derivation Framework**
+   RFC 2898 compliant password-based key derivation with HMAC-SHA256, configurable iterations, and CHARM entropy integration.
+
+### 4. **Audit & Compliance System**
    Tamper-evident audit logging with hash chain integrity, security incident tracking, and compliance reporting.
 
 ### 4. **Configuration Security**
@@ -194,7 +222,17 @@ make benchmark
 
 ```bash
 # Initialize and test the complete security suite
-./build/test_security_suite
+./build/charm_security_suite
+
+# PBKDF2 Key Derivation Operations
+./build/charm_security_suite --pbkdf2-config        # Show PBKDF2 configuration
+./build/charm_security_suite --pbkdf2-benchmark     # Benchmark system performance
+./build/charm_security_suite --pbkdf2-salt 32       # Generate 32-byte salt
+./build/charm_security_suite --pbkdf2-derive "password:100000"  # Derive key
+
+# Use the easy launcher
+./Launch_CHARM --test-pbkdf2                       # Test all PBKDF2 features
+./Launch_CHARM --demo                              # Complete demonstration
 
 # Example output:
 # CHARM Security Suite Test
@@ -247,6 +285,7 @@ Detailed documentation is available in the `documents` directory:
 - **[CHARM-B](CHARM-B/README.md)**: Ultra-small input optimized hash with comprehensive performance analysis
 - **[CHARM-B AEAD](CHARM-B/AEAD/README.md)**: Ultra-fast AEAD for constrained environments with SIV support
 - **[AEAD/AEAS](AEAD/AEAS/README.md)**: Authenticated encryption experiments with performance studies  
+- **[PBKDF2 Implementation](PBKDF2/README.md)**: RFC 2898 compliant password-based key derivation with CHARM integration
 - **[Security Suite (src/crypto/)](src/crypto/)**: Enterprise-grade security platform with comprehensive security services
 - **[Conformance Testing](documents/Conformance-Testing.md)**: NIST-style validation framework
 
