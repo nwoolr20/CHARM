@@ -1,10 +1,12 @@
 # CHARM-B (CHARMbit): Ultra-Small Input Optimized Hash
 
+CHARM-B is an optimized variant of the CHARM algorithm specifically designed for ultra-small inputs (≤64 bytes) where performance per byte is critical. This implementation addresses the common use case of hashing small data structures like transaction IDs, authentication tokens, IoT sensor readings, and database keys where traditional hash functions often underperform due to initialization overhead.
+
 CHARM-B is a specialized variant of CHARM optimized exclusively for ultra-small inputs (≤64B) where every byte and cycle matters.
 
-## 🚀 Revolutionary Performance Achieved
+## High Performance Results Achieved
 
-### Breakthrough Results vs SHA-256
+### Performance Results vs SHA-256
 - **8B**: 642.3 MB/s (**+686.2% faster**)
 - **16B**: 1,527.6 MB/s (**+489.3% faster**)  
 - **32B**: 2,120.5 MB/s (**+281.9% faster**)
@@ -13,9 +15,9 @@ CHARM-B is a specialized variant of CHARM optimized exclusively for ultra-small 
 ### Problem Solved
 - **Original CHARM at 64B**: 316.9 MB/s (54.5% slower than SHA-256)
 - **CHARM-B at 64B**: 3,112.8 MB/s (351.4% faster than SHA-256)
-- **Improvement**: **+882% performance gain!**
+- **Improvement**: **+882% performance gain**
 
-## 🎯 Key Features
+## Key Features
 
 ### 1. Bit-Level Optimization Engine ✅
 - Specialized bit-level mixing for maximum entropy diffusion
@@ -36,7 +38,7 @@ CHARM-B is a specialized variant of CHARM optimized exclusively for ultra-small 
 - 256-bit output for full compatibility
 - 128-bit output for micro-hashing applications
 
-## 🏗️ Quick Start
+## Quick Start
 
 ### Build and Test
 ```bash
@@ -86,20 +88,20 @@ AES-256-GCM  |  64B |    9.515 ms |       64.1 MB/s |    36.36 | ✅ 4752.7% FAS
 - 📡 **IoT Sensor Reading (8B)**: 1,130.0 MB/s
 - 🗄️ **Database Index Key (64B)**: 3,137.0 MB/s
 
-## 📁 Components
+## Components
 
-- **Core Entropy Engine**: Ultra-fast entropy processing for small inputs
+- **Core Entropy Engine**: High-performance entropy processing for small inputs
 - **CHARM-B Algorithm**: Bit-optimized hash algorithm with size-specific dispatch
 - **AEAD/AEAS**: Authenticated encryption using CHARM-B (in progress)
 - **Comprehensive Testing**: Extensive benchmarks and real-world tests
 
-## 📚 Documentation
+## Documentation
 
 - [`results/CHARM-B_PERFORMANCE_REPORT.md`](results/CHARM-B_PERFORMANCE_REPORT.md) - Complete performance analysis
 - [`results/CHARM_vs_CHARM-B_COMPARISON.md`](results/CHARM_vs_CHARM-B_COMPARISON.md) - Before/after comparison
 - [`results/CHARM-B_TECHNICAL_SPECIFICATION.md`](results/CHARM-B_TECHNICAL_SPECIFICATION.md) - Technical details
 
-## 🛡️ Security Properties
+## Security Properties
 
 | Security Aspect | Status | Implementation |
 |-----------------|--------|----------------|
@@ -108,11 +110,11 @@ AES-256-GCM  |  64B |    9.515 ms |       64.1 MB/s |    36.36 | ✅ 4752.7% FAS
 | **Buffer Safety** | ✅ **EXCELLENT** | Comprehensive bounds checking |
 | **Quantum Resistance** | ✅ **STRONG** | Entropy-native design |
 
-## 🏆 Achievement Summary
+## Implementation Summary
 
 ✅ **Identified the problem**: CHARM's small input performance gap  
 ✅ **Designed the solution**: CHARM-B specialized for ≤64B inputs  
-✅ **Implemented innovations**: Bit-level optimization, size-specific dispatch, SIMD acceleration  
+✅ **Implemented optimizations**: Bit-level optimization, size-specific dispatch, SIMD acceleration  
 ✅ **Delivered results**: 300-600%+ improvements over SHA-256  
 ✅ **Maintained security**: Full cryptographic properties preserved  
 ✅ **Enabled applications**: Production-ready performance for real-world use  
