@@ -890,7 +890,7 @@ static void ece_collapse_block(ece_handle_t handle, const uint8_t* block) {
  * @param c Third input byte
  * @return uint8_t Result of ternary operation
  */
-static uint8_t ece_ternary_operation(uint8_t a, uint8_t b, uint8_t c) {
+static uint8_t __attribute__((unused)) ece_ternary_operation(uint8_t a, uint8_t b, uint8_t c) {
     // Convert to ternary representation (3 trits per byte)
     uint8_t trits_a[3], trits_b[3], trits_c[3], result_trits[3];
     
@@ -931,7 +931,7 @@ static uint8_t ece_ternary_operation(uint8_t a, uint8_t b, uint8_t c) {
  * @param data Data to transform
  * @param size Size of data
  */
-static void ece_apply_trampoline(ece_handle_t handle, uint8_t* data, size_t size) {
+static void __attribute__((unused)) ece_apply_trampoline(ece_handle_t handle, uint8_t* data, size_t size) {
     if (!handle || !data || size == 0) return;
     
     for (size_t i = 0; i < size; i++) {
@@ -1083,7 +1083,7 @@ static uint8_t ece_ternary_operation_ct(uint8_t a, uint8_t b, uint8_t c) {
  * @param data Data to transform
  * @param size Size of data
  */
-static void ece_simd_chaos_injection(uint8_t* data, size_t size) {
+static void __attribute__((unused)) ece_simd_chaos_injection(uint8_t* data, size_t size) {
     if (!data || size == 0) return;
     
     // Use runtime detection to choose optimal SIMD path
@@ -1133,7 +1133,7 @@ static void ece_simd_chaos_injection(uint8_t* data, size_t size) {
  * @param data Data to transform
  * @param size Size of data
  */
-static void ece_simd_entropy_diffusion(uint8_t* data, size_t size) {
+static void __attribute__((unused)) ece_simd_entropy_diffusion(uint8_t* data, size_t size) {
     if (!data || size == 0) return;
     
 #if SIMD_AVAILABLE && defined(__AVX2__)
@@ -1191,7 +1191,7 @@ static void ece_simd_entropy_diffusion(uint8_t* data, size_t size) {
  * @param size Size of data  
  * @param time_seed Time-based seed for temporal entropy
  */
-static void ece_simd_temporal_mixing(uint8_t* data, size_t size, uint64_t time_seed) {
+static void __attribute__((unused)) ece_simd_temporal_mixing(uint8_t* data, size_t size, uint64_t time_seed) {
     if (!data || size == 0) return;
     
 #if SIMD_AVAILABLE && defined(__AVX2__)

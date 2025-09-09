@@ -66,7 +66,7 @@ int main(void) {
     // Perform health check
     printf("3. Security Health Check:\n");
     char issues[10][256];
-    size_t issue_count;
+    size_t issue_count = 0;  // Initialize to 0
     int health_score = charm_security_suite_health_check(issues, 10, &issue_count);
     
     printf("   Health Score: %d/100\n", health_score);
