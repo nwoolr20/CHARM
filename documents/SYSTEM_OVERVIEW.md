@@ -105,6 +105,6 @@ The CHARM architecture supports future expansion in:
 
 - Additional hardware acceleration paths
 - Enhanced entropy source integration
-- Advanced cryptographic primitives
+- Enhanced cryptographic primitives
 - Cloud and distributed deployment models
 - Hardware security module (HSM) implementations
