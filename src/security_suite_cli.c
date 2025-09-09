@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include "charm_security_suite.h"
+#include "../PBKDF2/pbkdf2.h"
 
 /* Print usage information */
 static void print_help(void) {
@@ -58,6 +59,13 @@ static void print_help(void) {
     printf("  --enable CAP            Enable specific capability\n");
     printf("  --disable CAP           Disable specific capability\n\n");
     
+    printf("PBKDF2 Operations:\n");
+    printf("  --pbkdf2-derive PASS:ITER   Derive key from password with iteration count\n");
+    printf("  --pbkdf2-salt LENGTH         Generate secure salt of specified length\n");
+    printf("  --pbkdf2-verify PASS:SALT:KEY Verify password against salt and key files\n");
+    printf("  --pbkdf2-benchmark           Benchmark and get recommended iterations\n");
+    printf("  --pbkdf2-config              Show PBKDF2 configuration\n\n");
+    
     printf("Examples:\n");
     printf("  charm_security_suite --status --capabilities\n");
     printf("  charm_security_suite --health --entropy-quality\n");
@@ -66,6 +74,9 @@ static void print_help(void) {
     printf("  charm_security_suite --sbom sbom.json\n");
     printf("  charm_security_suite --scan-vulns\n");
     printf("  charm_security_suite --export json:compliance.json\n");
+    printf("  charm_security_suite --pbkdf2-derive mypassword:100000\n");
+    printf("  charm_security_suite --pbkdf2-salt 32\n");
+    printf("  charm_security_suite --pbkdf2-benchmark\n");
 }
 
 /* Map string to incident type enum */
@@ -118,6 +129,13 @@ int main(int argc, char* argv[]) {
     char* config_set_arg = NULL;
     char* enable_cap = NULL;
     char* disable_cap = NULL;
+    
+    /* PBKDF2 variables */
+    char* pbkdf2_derive_arg = NULL;
+    char* pbkdf2_salt_arg = NULL;
+    char* pbkdf2_verify_arg = NULL;
+    bool pbkdf2_benchmark = false;
+    bool pbkdf2_config = false;
 
     static struct option long_options[] = {
         {"status", no_argument, 0, 's'},
@@ -148,6 +166,11 @@ int main(int argc, char* argv[]) {
         {"config-set", required_argument, 0, 'M'},
         {"enable", required_argument, 0, 'e'},
         {"disable", required_argument, 0, 'd'},
+        {"pbkdf2-derive", required_argument, 0, 'D'},
+        {"pbkdf2-salt", required_argument, 0, 'N'},
+        {"pbkdf2-verify", required_argument, 0, 'F'},
+        {"pbkdf2-benchmark", no_argument, 0, 'J'},
+        {"pbkdf2-config", no_argument, 0, 'K'},
         {0, 0, 0, 0}
     };
 
@@ -156,7 +179,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    while ((opt = getopt_long(argc, argv, "schb:r:vHiuR:kIVL:T:CBAEPQSOX:G:M:e:d:", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "schb:r:vHiuR:kIVL:T:CBAEPQSOX:G:M:e:d:D:N:F:JK", long_options, &option_index)) != -1) {
         switch (opt) {
             case 's':
                 show_status = true;
@@ -242,6 +265,21 @@ int main(int argc, char* argv[]) {
                 break;
             case 'd':
                 disable_cap = optarg;
+                break;
+            case 'D':
+                pbkdf2_derive_arg = optarg;
+                break;
+            case 'N':
+                pbkdf2_salt_arg = optarg;
+                break;
+            case 'F':
+                pbkdf2_verify_arg = optarg;
+                break;
+            case 'J':
+                pbkdf2_benchmark = true;
+                break;
+            case 'K':
+                pbkdf2_config = true;
                 break;
             default:
                 print_help();
@@ -557,6 +595,111 @@ int main(int argc, char* argv[]) {
         printf("Disabling capability: %s\n", disable_cap);
         // Parse capability name and disable it
         printf("Capability %s disabled\n", disable_cap);
+    }
+
+    /* PBKDF2 Operations */
+    
+    if (pbkdf2_config) {
+        pbkdf2_config_t config;
+        pbkdf2_init_default_config(&config);
+        printf("PBKDF2 Default Configuration:\n");
+        pbkdf2_print_config(&config);
+    }
+
+    if (pbkdf2_benchmark) {
+        printf("Benchmarking PBKDF2 on current system...\n");
+        uint32_t recommended = pbkdf2_get_recommended_iterations();
+        printf("Recommended iterations: %u (target: 100ms)\n", recommended);
+    }
+
+    if (pbkdf2_salt_arg) {
+        size_t salt_length = atol(pbkdf2_salt_arg);
+        if (salt_length < PBKDF2_MIN_SALT_LENGTH || salt_length > 1024) {
+            fprintf(stderr, "Invalid salt length. Must be between %d and 1024 bytes\n", 
+                    PBKDF2_MIN_SALT_LENGTH);
+            exit_code = 1;
+        } else {
+            uint8_t* salt = malloc(salt_length);
+            if (salt) {
+                if (pbkdf2_generate_salt(salt, salt_length, 1) == PBKDF2_SUCCESS) {
+                    printf("Generated salt (%zu bytes): ", salt_length);
+                    for (size_t i = 0; i < salt_length; i++) {
+                        printf("%02x", salt[i]);
+                    }
+                    printf("\n");
+                } else {
+                    fprintf(stderr, "Failed to generate salt\n");
+                    exit_code = 1;
+                }
+                free(salt);
+            } else {
+                fprintf(stderr, "Memory allocation failed\n");
+                exit_code = 1;
+            }
+        }
+    }
+
+    if (pbkdf2_derive_arg) {
+        char* colon = strchr(pbkdf2_derive_arg, ':');
+        if (!colon) {
+            fprintf(stderr, "Invalid --pbkdf2-derive argument. Use PASSWORD:ITERATIONS\n");
+            exit_code = 1;
+        } else {
+            *colon = '\0';
+            const char* password = pbkdf2_derive_arg;
+            uint32_t iterations = atol(colon + 1);
+            
+            if (iterations < PBKDF2_MIN_ITERATIONS) {
+                fprintf(stderr, "Iterations must be at least %d\n", PBKDF2_MIN_ITERATIONS);
+                exit_code = 1;
+            } else {
+                uint8_t salt[PBKDF2_DEFAULT_SALT_LENGTH];
+                uint8_t derived_key[32]; /* 256-bit key */
+                
+                /* Generate salt */
+                if (pbkdf2_generate_salt(salt, sizeof(salt), 1) != PBKDF2_SUCCESS) {
+                    fprintf(stderr, "Failed to generate salt\n");
+                    exit_code = 1;
+                } else {
+                    /* Derive key */
+                    pbkdf2_result_t result = pbkdf2_derive_key(
+                        (const uint8_t*)password, strlen(password),
+                        salt, sizeof(salt),
+                        iterations,
+                        derived_key, sizeof(derived_key)
+                    );
+                    
+                    if (result == PBKDF2_SUCCESS) {
+                        printf("PBKDF2 Key Derivation Successful:\n");
+                        printf("  Password: %s\n", password);
+                        printf("  Iterations: %u\n", iterations);
+                        printf("  Salt (%zu bytes): ", sizeof(salt));
+                        for (size_t i = 0; i < sizeof(salt); i++) {
+                            printf("%02x", salt[i]);
+                        }
+                        printf("\n  Derived Key (%zu bytes): ", sizeof(derived_key));
+                        for (size_t i = 0; i < sizeof(derived_key); i++) {
+                            printf("%02x", derived_key[i]);
+                        }
+                        printf("\n");
+                    } else {
+                        fprintf(stderr, "PBKDF2 derivation failed: %s\n", 
+                                pbkdf2_result_to_string(result));
+                        exit_code = 1;
+                    }
+                    
+                    /* Secure cleanup */
+                    memset(derived_key, 0, sizeof(derived_key));
+                }
+            }
+        }
+    }
+
+    if (pbkdf2_verify_arg) {
+        /* For simplicity, this example just demonstrates the verification API */
+        printf("PBKDF2 verification would check password against stored salt/key\n");
+        printf("Format: PASSWORD:SALT_HEX:KEY_HEX\n");
+        printf("This is a placeholder for file-based verification\n");
     }
 
     charm_security_suite_shutdown();
